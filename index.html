@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>塑形紀錄</title>
+<title>飲食與身形紀錄</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
@@ -472,12 +472,32 @@ ${knownText}
         ]}]})
     });
     const data = await response.json();
+    if(!response.ok){
+      throw new Error(data?.error?.message || `API 錯誤 (狀態碼 ${response.status})`);
+    }
+    if(!data.content || !data.content.length){
+      throw new Error('API 沒有回傳內容');
+    }
     const text = data.content.map(b=>b.text||'').join('');
-    const parsed = JSON.parse(text.replace(/```json|```/g,'').trim());
+    const jsonStart = text.indexOf('{');
+    const jsonEnd = text.lastIndexOf('}');
+    if(jsonStart===-1 || jsonEnd===-1){
+      throw new Error('AI 回傳的內容不是預期的 JSON 格式：' + text.slice(0,120));
+    }
+    const jsonStr = text.slice(jsonStart, jsonEnd+1);
+    let parsed;
+    try{
+      parsed = JSON.parse(jsonStr);
+    }catch(parseErr){
+      throw new Error('JSON 解析失敗：' + parseErr.message);
+    }
+    if(!parsed.items || !Array.isArray(parsed.items) || parsed.items.length===0){
+      throw new Error('AI 沒有辨識出任何食物項目，請換一張更清楚的照片再試');
+    }
     renderResultCard(parsed);
   }catch(err){
     console.error(err);
-    document.getElementById('errorBox').textContent='辨識失敗，請重新拍照或稍後再試。';
+    document.getElementById('errorBox').textContent = '辨識失敗：' + (err.message || '請重新拍照或稍後再試。');
     document.getElementById('errorBox').style.display='block';
   }finally{
     document.getElementById('loadingBox').style.display='none';
