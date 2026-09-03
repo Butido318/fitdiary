@@ -16,22 +16,29 @@
     --leaf:#2f6f4e;
     --ochre:#c98a1d;
     --slate:#3d5a80;
-    --soft-line:#e4e2da;
+    --soft-line:#c9c4b6;
     --track:#eae8e0;
   }
   *{box-sizing:border-box;}
+  html{overflow-x:hidden;width:100%;}
   body{
     margin:0;
     background:var(--paper);
     color:var(--ink);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-    padding-bottom:140px;
+    padding-bottom:40px;
+    overflow-x:hidden;
+    width:100%;
   }
-  .wrap{max-width:480px;margin:0 auto;padding:20px 16px 40px;}
+  .wrap{max-width:480px;margin:0 auto;padding:20px 16px 40px;width:100%;}
   header{margin-bottom:14px;}
   .eyebrow{font-size:11px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:4px;}
   h1{font-family:'Arial Narrow',"Helvetica Neue Condensed","Segoe UI",sans-serif;font-weight:800;font-size:30px;letter-spacing:.01em;margin:0;}
   .date{color:var(--muted);font-size:13px;margin-top:2px;}
+  .date-row{display:flex;align-items:center;gap:8px;margin-top:6px;}
+  .date-row input[type=date]{border:1px solid var(--soft-line);border-radius:6px;padding:6px 8px;font-family:inherit;font-size:13px;color:var(--ink);background:var(--card);}
+  .today-btn{border:1px solid var(--soft-line);border-radius:6px;padding:6px 10px;font-size:12px;background:var(--card);color:var(--muted);cursor:pointer;}
+  .today-btn.is-today{display:none;}
 
   /* Tabs */
   .tabbar{display:flex;gap:6px;margin-bottom:18px;border-bottom:2px solid var(--line);}
@@ -44,7 +51,16 @@
   .tab-panel{display:none;}
   .tab-panel.active{display:block;}
 
-  .known-field{background:var(--card);border:1px solid var(--soft-line);border-radius:8px;padding:8px 10px;margin-bottom:10px;}
+  .known-field{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-bottom:10px;}
+  .food-row{display:flex;gap:8px;margin-bottom:8px;align-items:center;}
+  .food-row input{flex:1;min-width:0;border:1px solid var(--soft-line);border-radius:6px;padding:8px;font-family:inherit;font-size:13px;background:var(--paper);}
+  .food-row input.fr-amount{flex:0 0 90px;}
+  .food-row .fr-del{flex:0 0 auto;background:none;border:none;color:var(--muted);font-size:16px;cursor:pointer;padding:0 2px;}
+  .calorie-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--soft-line);font-size:13px;}
+  .calorie-row:last-child{border-bottom:none;}
+  .calorie-row .cr-val{font-family:'Arial Narrow',"Helvetica Neue Condensed",sans-serif;font-weight:800;font-size:16px;}
+  .calorie-row.deficit .cr-val.pos{color:var(--leaf);}
+  .calorie-row.deficit .cr-val.neg{color:var(--flame);}
   .known-field label{display:block;font-size:11px;color:var(--muted);margin-bottom:3px;font-weight:700;}
   .known-field textarea{border:none;background:transparent;width:100%;font-family:inherit;font-size:13px;color:var(--ink);resize:vertical;}
   .exercise-form{background:var(--card);border:1px solid var(--soft-line);border-radius:10px;padding:14px;}
@@ -70,14 +86,18 @@
   .items-total{display:flex;justify-content:space-between;padding:10px 4px;font-weight:800;font-family:'Arial Narrow',"Helvetica Neue Condensed",sans-serif;font-size:14px;border-top:2px solid var(--line);margin-top:10px;}
 
   .upload-box{
-    border:2px dashed var(--line);border-radius:10px;padding:22px 16px;text-align:center;
+    border:1px solid var(--line);border-radius:10px;padding:22px 16px;text-align:center;
     background:var(--card);cursor:pointer;position:relative;overflow:hidden;
+    box-shadow:0 1px 3px rgba(0,0,0,.08);
   }
   .upload-box:active{background:#f0efe9;}
   .upload-box .icon{font-size:26px;margin-bottom:6px;}
   .upload-box .main-txt{font-weight:700;font-size:15px;}
   .upload-box .sub-txt{color:var(--muted);font-size:12px;margin-top:4px;}
-  input[type=file]{display:none;}
+  input[type=file]{
+    position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+    overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+  }
 
   .preview-wrap{position:relative;margin-top:14px;}
   .preview-img{width:100%;max-height:280px;object-fit:cover;border-radius:10px;border:1px solid var(--soft-line);display:block;}
@@ -129,6 +149,9 @@
   .empty{color:var(--muted);font-size:13px;padding:16px 0;text-align:center;}
 
   .log-item{display:flex;justify-content:space-between;align-items:center;background:var(--card);border:1px solid var(--soft-line);border-radius:8px;padding:10px 12px;margin-bottom:8px;}
+  .log-total{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border:2px solid var(--line);border-radius:8px;font-weight:700;font-size:13px;background:var(--card);}
+  .log-total-macros{color:var(--muted);font-size:11px;flex:1;text-align:center;}
+  .log-total-cal{font-family:'Arial Narrow',"Helvetica Neue Condensed",sans-serif;font-weight:800;font-size:18px;color:var(--flame);white-space:nowrap;}
   .log-item .li-name{font-weight:700;font-size:14px;}
   .log-item .li-macros{font-size:11px;color:var(--muted);margin-top:2px;}
   .log-item .li-tag{display:inline-block;font-size:10px;background:var(--track);border-radius:10px;padding:1px 8px;margin-left:6px;color:var(--muted);}
@@ -136,7 +159,7 @@
   .li-left{flex:1;min-width:0;}
   .del-btn{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:0 0 0 10px;line-height:1;}
 
-  .summary-bar{position:fixed;bottom:0;left:0;right:0;background:var(--ink);color:var(--paper);padding:10px 16px calc(10px + env(safe-area-inset-bottom));}
+  .summary-bar{background:var(--ink);color:var(--paper);border-radius:10px;padding:12px 16px;margin-top:10px;}
   .summary-inner{max-width:480px;margin:0 auto;}
   .sum-row{display:flex;justify-content:space-between;gap:10px;margin-bottom:6px;}
   .sum-row:last-child{margin-bottom:0;}
@@ -154,10 +177,10 @@
   .angle-select{display:flex;gap:8px;margin:12px 0;}
   .angle-btn{flex:1;padding:8px;border:1px solid var(--soft-line);border-radius:8px;background:var(--card);font-size:12px;font-weight:600;cursor:pointer;}
   .angle-btn.active{background:var(--ink);color:var(--paper);border-color:var(--ink);}
-  .field-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px;}
-  .field{background:var(--card);border:1px solid var(--soft-line);border-radius:8px;padding:8px 10px;}
+  .field-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px;min-width:0;}
+  .field{background:var(--card);border:1px solid var(--soft-line);border-radius:8px;padding:8px 10px;min-width:0;overflow:hidden;}
   .field label{display:block;font-size:11px;color:var(--muted);margin-bottom:2px;}
-  .field input,.field select{border:none;background:transparent;width:100%;font-family:inherit;font-size:15px;font-weight:700;color:var(--ink);}
+  .field input,.field select{border:none;background:transparent;width:100%;min-width:0;font-family:inherit;font-size:14px;font-weight:700;color:var(--ink);}
   .note-field{margin-top:10px;background:var(--card);border:1px solid var(--soft-line);border-radius:8px;padding:8px 10px;}
   .note-field label{display:block;font-size:11px;color:var(--muted);margin-bottom:2px;}
   .note-field input{border:none;background:transparent;width:100%;font-family:inherit;font-size:13px;color:var(--ink);}
@@ -202,7 +225,10 @@
   <header>
     <div class="eyebrow">飲食與身形紀錄</div>
     <h1 id="pageTitle">今天吃了什麼？</h1>
-    <div class="date" id="dateLabel"></div>
+    <div class="date-row">
+      <input type="date" id="dateInput">
+      <button class="today-btn" id="todayBtn" onclick="setToToday()">回到今天</button>
+    </div>
   </header>
 
   <div class="tabbar">
@@ -215,27 +241,50 @@
   <div class="tab-panel active" id="tab-diet">
     <div id="favArea"></div>
 
-    <div class="known-field">
-      <label for="knownItemsInput">已知品項與克數（選填）</label>
-      <textarea id="knownItemsInput" rows="2" placeholder="例如：雞胸肉 150g、白飯 200g&#10;沒寫出來的部分交給 AI 從照片判斷"></textarea>
+    <div class="settings-card">
+      <div class="fav-label" style="margin-bottom:8px;">新增食物（食物名稱＋估計份量或重量）</div>
+      <div id="foodRows"></div>
+      <button class="cancel-btn" onclick="addFoodRow()">＋ 新增一列</button>
+      <button class="add-btn" onclick="estimateFoodRows()">AI 估算營養</button>
+      <div class="note">＊ 填「食物名稱」與「份量或重量」（例如：150g、1碗、半份），AI 會依你填的量估算熱量與營養，不需要拍照。</div>
     </div>
 
-    <label class="upload-box" id="uploadBox">
-      <div class="icon">📷</div>
-      <div class="main-txt">拍照或上傳食物照片</div>
-      <div class="sub-txt">AI 會結合上方已知品項，估算剩下的部分</div>
-      <input type="file" id="fileInput" accept="image/*" capture="environment">
-    </label>
-
-    <img id="previewImg" class="preview-img" style="display:none;margin-top:14px;">
     <div id="loadingBox" class="loading" style="display:none;">
-      <div class="spinner"></div><span>正在辨識食物、估算營養中…</span>
+      <div class="spinner"></div><span>正在估算營養中…</span>
     </div>
     <div id="errorBox" class="error-box" style="display:none;"></div>
     <div id="resultCard"></div>
 
-    <div class="section-title">今日紀錄</div>
+    <div class="section-title" id="logTitle">今日紀錄</div>
     <div id="logList"></div>
+
+    <div class="summary-bar" id="summaryBar">
+      <div class="summary-inner">
+        <div class="sum-row">
+          <div class="sum-item">
+            <div class="sum-top"><span>攝取熱量</span><span class="sum-cur" id="sumCal">0 / 0</span></div>
+            <div class="bar-track"><div class="bar-fill cal" id="barCal" style="width:0%"></div></div>
+          </div>
+        </div>
+        <div class="sum-row">
+          <div class="sum-item">
+            <div class="sum-top"><span>蛋白質</span><span class="sum-cur" id="sumProtein">0/0g</span></div>
+            <div class="bar-track"><div class="bar-fill protein" id="barProtein" style="width:0%"></div></div>
+          </div>
+          <div class="sum-item">
+            <div class="sum-top"><span>碳水</span><span class="sum-cur" id="sumCarbs">0/0g</span></div>
+            <div class="bar-track"><div class="bar-fill carbs" id="barCarbs" style="width:0%"></div></div>
+          </div>
+          <div class="sum-item">
+            <div class="sum-top"><span>脂肪</span><span class="sum-cur" id="sumFat">0/0g</span></div>
+            <div class="bar-track"><div class="bar-fill fat" id="barFat" style="width:0%"></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-title" id="calorieSummaryTitle">今日熱量收支</div>
+    <div class="settings-card" id="calorieSummary"></div>
 
     <div class="section-title">運動紀錄</div>
     <div class="exercise-form">
@@ -258,56 +307,35 @@
       <div class="note">＊ 以 MET 公式估算：消耗大卡 = MET × 體重(kg) × 時間(小時)，實際消耗因人而異，僅供參考。</div>
     </div>
     <div id="exerciseList" style="margin-top:10px;"></div>
+
+    <div class="section-title">本週熱量趨勢</div>
+    <div class="chart-box" id="weeklyChart"></div>
   </div>
 
   <!-- BODY TAB -->
   <div class="tab-panel" id="tab-body">
-    <label class="upload-box" id="bodyUploadBox">
-      <div class="icon">🧍</div>
-      <div class="main-txt">拍攝身形照片</div>
-      <div class="sub-txt">建議固定站位／距離，比較才準確</div>
-      <input type="file" id="bodyFileInput" accept="image/*" capture="environment">
-    </label>
-
-    <div class="angle-select">
-      <button class="angle-btn active" data-angle="正面">正面</button>
-      <button class="angle-btn" data-angle="側面">側面</button>
-      <button class="angle-btn" data-angle="背面">背面</button>
-    </div>
-
-    <div id="bodyPreviewWrap" style="display:none;">
-      <div class="preview-wrap">
-        <img id="bodyPreviewImg" class="preview-img">
-        <svg class="pose-guide" viewBox="0 0 100 140" preserveAspectRatio="none">
-          <line x1="50" y1="0" x2="50" y2="140" stroke="#ffffff" stroke-width="0.4" stroke-dasharray="2,2"/>
-          <ellipse cx="50" cy="14" rx="7" ry="9" fill="none" stroke="#ffffff" stroke-width="0.5"/>
-          <path d="M35 26 Q50 20 65 26 L68 90 Q50 96 32 90 Z" fill="none" stroke="#ffffff" stroke-width="0.5"/>
-          <line x1="0" y1="128" x2="100" y2="128" stroke="#ffffff" stroke-width="0.4" stroke-dasharray="2,2"/>
-        </svg>
-      </div>
+    <div class="settings-card">
       <div class="field-grid">
         <div class="field"><label>體重 (kg)</label><input type="number" id="bf-weight" step="0.1" placeholder="選填"></div>
         <div class="field"><label>體脂率 (%)</label><input type="number" id="bf-bodyfat" step="0.1" placeholder="選填"></div>
         <div class="field"><label>肌肉量 (kg)</label><input type="number" id="bf-muscle" step="0.1" placeholder="選填"></div>
       </div>
       <div class="note-field"><label>備註（聚餐／生理期／訓練日…）</label><input type="text" id="bf-note" placeholder="選填"></div>
-      <button class="add-btn" onclick="addBodyEntry()">加入身形紀錄</button>
-      <button class="cancel-btn" onclick="clearBodyPreview()">取消</button>
+      <button class="add-btn" id="addBodyBtn" onclick="addBodyEntry()">加入今日身形紀錄</button>
     </div>
 
     <div class="section-title">時間軸</div>
-    <div id="bodyTimeline" class="body-timeline"></div>
+    <div id="bodyTimeline"></div>
 
-    <div class="section-title">體重趨勢</div>
+    <div class="section-title">體重／肌肉量趨勢</div>
     <div class="chart-box" id="weightChart"></div>
 
-    <div class="section-title">身形比較</div>
+    <div class="section-title">數據比較</div>
     <div class="compare-box">
       <div class="compare-selects">
         <select id="compareA"></select>
         <select id="compareB"></select>
       </div>
-      <div class="compare-view" id="compareView"></div>
       <div class="diff-badge" id="compareDiff"></div>
     </div>
   </div>
@@ -316,6 +344,7 @@
   <div class="tab-panel" id="tab-settings">
     <div class="section-title" style="margin-top:0;">每日目標設定</div>
     <div class="settings-card">
+      <div class="settings-row"><label>基礎代謝率 BMR (大卡)</label><input type="number" id="t-bmr"></div>
       <div class="settings-row"><label>熱量目標 (大卡)</label><input type="number" id="t-cal"></div>
       <div class="settings-row"><label>蛋白質目標 (g)</label><input type="number" id="t-protein"></div>
       <div class="settings-row"><label>碳水目標 (g)</label><input type="number" id="t-carbs"></div>
@@ -332,46 +361,44 @@
   </div>
 </div>
 
-<div class="summary-bar" id="summaryBar">
-  <div class="summary-inner">
-    <div class="sum-row">
-      <div class="sum-item">
-        <div class="sum-top"><span>攝取熱量</span><span class="sum-cur" id="sumCal">0 / 0</span></div>
-        <div class="bar-track"><div class="bar-fill cal" id="barCal" style="width:0%"></div></div>
-      </div>
-    </div>
-    <div class="sum-row">
-      <div class="sum-item">
-        <div class="sum-top"><span>運動消耗</span><span class="sum-cur" id="sumBurned" style="color:#7a9bc4;">-0</span></div>
-      </div>
-      <div class="sum-item">
-        <div class="sum-top"><span>淨熱量</span><span class="sum-cur" id="sumNet">0 / 0</span></div>
-      </div>
-    </div>
-    <div class="sum-row">
-      <div class="sum-item">
-        <div class="sum-top"><span>蛋白質</span><span class="sum-cur" id="sumProtein">0/0g</span></div>
-        <div class="bar-track"><div class="bar-fill protein" id="barProtein" style="width:0%"></div></div>
-      </div>
-      <div class="sum-item">
-        <div class="sum-top"><span>碳水</span><span class="sum-cur" id="sumCarbs">0/0g</span></div>
-        <div class="bar-track"><div class="bar-fill carbs" id="barCarbs" style="width:0%"></div></div>
-      </div>
-      <div class="sum-item">
-        <div class="sum-top"><span>脂肪</span><span class="sum-cur" id="sumFat">0/0g</span></div>
-        <div class="bar-track"><div class="bar-fill fat" id="barFat" style="width:0%"></div></div>
-      </div>
-    </div>
-  </div>
-</div>
-
 <script>
 /* ---------- utils ---------- */
 function escapeHtml(str){const d=document.createElement('div');d.textContent=str||'';return d.innerHTML;}
 function todayKey(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
-const DIET_KEY = `entries:${todayKey()}`;
-const EXERCISE_KEY = `exercise:${todayKey()}`;
-document.getElementById('dateLabel').textContent = new Date().toLocaleDateString('zh-TW',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+let currentDate = todayKey();
+function DIET_KEY_FN(){ return `entries:${currentDate}`; }
+function EXERCISE_KEY_FN(){ return `exercise:${currentDate}`; }
+
+function formatDateLabel(dateStr){
+  const [y,m,d] = dateStr.split('-').map(Number);
+  const dt = new Date(y, m-1, d);
+  return dt.toLocaleDateString('zh-TW',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+}
+function shortDateLabel(dateStr){
+  const [y,m,d] = dateStr.split('-').map(Number);
+  return `${m}月${d}日`;
+}
+function refreshDateUI(){
+  document.getElementById('dateInput').value = currentDate;
+  const isToday = currentDate===todayKey();
+  const dayLabel = isToday ? '今日' : shortDateLabel(currentDate);
+  document.getElementById('pageTitle').textContent = isToday ? '今天吃了什麼？' : formatDateLabel(currentDate)+' 吃了什麼？';
+  document.getElementById('todayBtn').classList.toggle('is-today', isToday);
+  document.getElementById('logTitle').textContent = `${dayLabel}紀錄`;
+  document.getElementById('calorieSummaryTitle').textContent = `${dayLabel}熱量收支`;
+  document.getElementById('addBodyBtn').textContent = `加入${dayLabel}身形紀錄`;
+}
+function setToToday(){
+  currentDate = todayKey();
+  refreshDateUI();
+  renderDietLog();
+}
+document.getElementById('dateInput').addEventListener('change', (e)=>{
+  currentDate = e.target.value || todayKey();
+  refreshDateUI();
+  renderDietLog();
+});
+refreshDateUI();
 
 /* ---------- tabs ---------- */
 document.querySelectorAll('.tab-btn').forEach(btn=>{
@@ -380,17 +407,17 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
     document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
     btn.classList.add('active');
     document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
-    document.getElementById('summaryBar').style.display = btn.dataset.tab==='diet' ? 'block':'none';
   });
 });
 
 /* ---------- targets ---------- */
-let targets = {calories:2000,protein:100,carbs:250,fat:65};
+let targets = {calories:2000,protein:100,carbs:250,fat:65,bmr:1300};
 async function loadTargets(){
   try{
     const r = await window.storage.get('targets', false);
-    if(r) targets = JSON.parse(r.value);
+    if(r) targets = Object.assign({bmr:1300}, JSON.parse(r.value));
   }catch(e){}
+  document.getElementById('t-bmr').value = targets.bmr;
   document.getElementById('t-cal').value = targets.calories;
   document.getElementById('t-protein').value = targets.protein;
   document.getElementById('t-carbs').value = targets.carbs;
@@ -398,6 +425,7 @@ async function loadTargets(){
 }
 async function saveTargets(){
   targets = {
+    bmr: Number(document.getElementById('t-bmr').value)||0,
     calories: Number(document.getElementById('t-cal').value)||0,
     protein: Number(document.getElementById('t-protein').value)||0,
     carbs: Number(document.getElementById('t-carbs').value)||0,
@@ -413,7 +441,7 @@ async function saveTargets(){
 
 /* ---------- favorites ---------- */
 async function getFavorites(){
-  try{const r=await window.storage.get('favorites',false); return r?JSON.parse(r.value):[];}catch(e){return [];}
+  try{const r=await window.storage.get('favorites', false); return r?JSON.parse(r.value):[];}catch(e){return [];}
 }
 async function renderFavorites(){
   const favs = await getFavorites();
@@ -430,46 +458,58 @@ async function quickAddFav(id){
   const existing = await getEntries();
   existing.push({id:Date.now().toString(),time:new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}),
     name:f.name,portion:f.portion||'',calories:f.calories,protein:f.protein,carbs:f.carbs,fat:f.fat,tag:''});
-  await window.storage.set(DIET_KEY, JSON.stringify(existing), false);
+  await window.storage.set(DIET_KEY_FN(), JSON.stringify(existing), false);
   renderDietLog();
 }
 
 /* ---------- diet: analyze photo ---------- */
-document.getElementById('fileInput').addEventListener('change', async (e)=>{
-  const file = e.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = async ()=>{
-    const base64 = reader.result.split(',')[1];
-    document.getElementById('previewImg').src = reader.result;
-    document.getElementById('previewImg').style.display='block';
-    document.getElementById('resultCard').innerHTML='';
-    document.getElementById('errorBox').style.display='none';
-    await analyzeFood(base64, file.type||'image/jpeg');
-  };
-  reader.readAsDataURL(file);
-});
+/* ---------- food rows (manual entry, text-based AI estimation, no photo) ---------- */
+let foodRowCount = 0;
+function addFoodRow(){
+  const i = foodRowCount++;
+  const wrap = document.createElement('div');
+  wrap.className = 'food-row';
+  wrap.id = `food-row-${i}`;
+  wrap.innerHTML = `
+    <input type="text" id="fr-name-${i}" placeholder="食物名稱，例如：雞胸肉">
+    <input type="text" id="fr-amount-${i}" class="fr-amount" placeholder="150g / 1碗">
+    <button class="fr-del" onclick="document.getElementById('food-row-${i}').remove()">✕</button>`;
+  document.getElementById('foodRows').appendChild(wrap);
+}
+// seed with 2 empty rows on load
+function ensureFoodRows(){
+  if(document.getElementById('foodRows').children.length===0){
+    addFoodRow(); addFoodRow();
+  }
+}
 
-async function analyzeFood(base64, mediaType){
+async function estimateFoodRows(){
+  const rows = Array.from(document.getElementById('foodRows').children);
+  const items = rows.map(r=>{
+    const idx = r.id.replace('food-row-','');
+    const name = document.getElementById(`fr-name-${idx}`).value.trim();
+    const amount = document.getElementById(`fr-amount-${idx}`).value.trim();
+    return {name, amount};
+  }).filter(x=>x.name);
+  if(items.length===0){
+    document.getElementById('errorBox').textContent = '請至少填一項食物名稱。';
+    document.getElementById('errorBox').style.display='block';
+    return;
+  }
+  document.getElementById('errorBox').style.display='none';
   document.getElementById('loadingBox').style.display='flex';
   try{
-    const knownText = (document.getElementById('knownItemsInput').value||'').trim();
-    const knownInstruction = knownText
-      ? `使用者已提供部分品項與克數，這些是「已知、準確」的資訊，請直接依照這些名稱與克數計算營養值（source 設為 "known"），不要重新用照片猜測其重量：
-${knownText}
-照片中若還有使用者沒列出的其他食物，請你自行辨識並估算份量與營養值（source 設為 "estimated"）。若使用者列出的品項在照片中看不出來也沒關係，一樣依使用者提供的克數計算。`
-      : `請辨識照片中的所有食物，估算份量與營養值（每個項目 source 都設為 "estimated"）。`;
-    const prompt = `你是專業營養師。${knownInstruction}
+    const listText = items.map(it=>`${it.name}${it.amount?'　'+it.amount:'（份量未填，請用一般常見份量估算）'}`).join('\n');
+    const prompt = `你是專業營養師。使用者列出以下食物與份量／重量，請依照一般食物營養資料庫估算每一項的熱量與三大營養素：
+${listText}
+
 僅回傳 JSON，不要有任何其他文字、說明或 markdown 符號。格式：
-{"items":[{"name":"食物名稱","amount":"份量或克數描述","calories":整數,"protein":整數,"carbs":整數,"fat":整數,"source":"known"或"estimated"}],"note":"簡短說明，20字以內"}
-單位：calories 為大卡，protein/carbs/fat 為公克。estimated 的部分僅供參考。`;
+{"items":[{"name":"食物名稱","amount":"份量或克數描述","calories":整數,"protein":整數,"carbs":整數,"fat":整數}],"note":"簡短說明，20字以內"}
+單位：calories 為大卡，protein/carbs/fat 為公克。項目順序需與使用者列出的順序一致。`;
     const response = await fetch("https://api.anthropic.com/v1/messages",{
       method:"POST",headers:{"Content-Type":"application/json"},
-      body: JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1500,
-        messages:[{role:"user",content:[
-          {type:"image",source:{type:"base64",media_type:mediaType,data:base64}},
-          {type:"text",text:prompt}
-        ]}]})
+      body: JSON.stringify({model:"claude-sonnet-4-6",max_tokens:1200,
+        messages:[{role:"user",content:prompt}]})
     });
     const data = await response.json();
     if(!response.ok){
@@ -484,20 +524,19 @@ ${knownText}
     if(jsonStart===-1 || jsonEnd===-1){
       throw new Error('AI 回傳的內容不是預期的 JSON 格式：' + text.slice(0,120));
     }
-    const jsonStr = text.slice(jsonStart, jsonEnd+1);
     let parsed;
     try{
-      parsed = JSON.parse(jsonStr);
+      parsed = JSON.parse(text.slice(jsonStart, jsonEnd+1));
     }catch(parseErr){
       throw new Error('JSON 解析失敗：' + parseErr.message);
     }
     if(!parsed.items || !Array.isArray(parsed.items) || parsed.items.length===0){
-      throw new Error('AI 沒有辨識出任何食物項目，請換一張更清楚的照片再試');
+      throw new Error('AI 沒有回傳任何品項，請確認食物名稱是否清楚');
     }
     renderResultCard(parsed);
   }catch(err){
     console.error(err);
-    document.getElementById('errorBox').textContent = '辨識失敗：' + (err.message || '請重新拍照或稍後再試。');
+    document.getElementById('errorBox').textContent = '估算失敗：' + (err.message || '請稍後再試。');
     document.getElementById('errorBox').style.display='block';
   }finally{
     document.getElementById('loadingBox').style.display='none';
@@ -510,7 +549,6 @@ function renderResultCard(result){
     <div class="item-card">
       <div class="item-head">
         <input id="it-name-${i}" value="${escapeHtml(it.name||'')}">
-        <span class="src-badge ${it.source==='known'?'known':'estimated'}">${it.source==='known'?'已知':'AI估算'}</span>
       </div>
       <div class="item-amount"><input id="it-amount-${i}" value="${escapeHtml(it.amount||'')}"></div>
       <div class="item-macros">
@@ -537,18 +575,14 @@ function renderResultCard(result){
       ${itemsHtml}
       <div class="items-total"><span>合計</span><span>${total.calories} 大卡</span></div>
       ${result.note?`<div class="note">＊ ${escapeHtml(result.note)}</div>`:''}
-      <div class="note">＊ 「已知」項目依你輸入的克數計算，「AI估算」為照片判斷，僅供參考，皆可手動修改。</div>
+      <div class="note">＊ AI 依你填寫的份量估算，僅供參考，皆可手動修改。</div>
       <label class="fav-check"><input type="checkbox" id="f-savefav"> 加入常用食物清單（整份餐點）</label>
       <button class="add-btn" onclick="addToLog(${items.length})">加入今日紀錄</button>
       <button class="cancel-btn" onclick="clearResult()">取消</button>
     </div>`;
-  window.__resultItems = items;
 }
 function clearResult(){
   document.getElementById('resultCard').innerHTML='';
-  document.getElementById('previewImg').style.display='none';
-  document.getElementById('fileInput').value='';
-  window.__resultItems = null;
 }
 async function addToLog(count){
   const tag = document.getElementById('f-tag').value||'';
@@ -575,18 +609,19 @@ async function addToLog(count){
   }
   const existing = await getEntries();
   existing.push(...entries);
-  await window.storage.set(DIET_KEY, JSON.stringify(existing), false);
-  document.getElementById('knownItemsInput').value='';
+  await window.storage.set(DIET_KEY_FN(), JSON.stringify(existing), false);
+  document.getElementById('foodRows').innerHTML='';
+  addFoodRow(); addFoodRow();
   clearResult();
   renderDietLog();
 }
 async function deleteEntry(id){
   const existing = await getEntries();
-  await window.storage.set(DIET_KEY, JSON.stringify(existing.filter(e=>e.id!==id)), false);
+  await window.storage.set(DIET_KEY_FN(), JSON.stringify(existing.filter(e=>e.id!==id)), false);
   renderDietLog();
 }
 async function getExerciseEntries(){
-  try{const r=await window.storage.get(EXERCISE_KEY,false); return r?JSON.parse(r.value):[];}catch(e){return [];}
+  try{const r=await window.storage.get(EXERCISE_KEY_FN(), false); return r?JSON.parse(r.value):[];}catch(e){return [];}
 }
 async function addExercise(){
   const sel = document.getElementById('ex-type');
@@ -605,13 +640,13 @@ async function addExercise(){
   const calories = Math.round(met * weight * (duration/60));
   const entries = await getExerciseEntries();
   entries.push({id:Date.now().toString(),time:new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}),name:sel.value,duration,weight,calories});
-  await window.storage.set(EXERCISE_KEY, JSON.stringify(entries), false);
+  await window.storage.set(EXERCISE_KEY_FN(), JSON.stringify(entries), false);
   document.getElementById('ex-duration').value='';
   renderDietLog();
 }
 async function deleteExercise(id){
   const entries = await getExerciseEntries();
-  await window.storage.set(EXERCISE_KEY, JSON.stringify(entries.filter(e=>e.id!==id)), false);
+  await window.storage.set(EXERCISE_KEY_FN(), JSON.stringify(entries.filter(e=>e.id!==id)), false);
   renderDietLog();
 }
 async function renderExerciseList(){
@@ -629,13 +664,13 @@ async function renderExerciseList(){
   return entries.reduce((a,e)=>a+e.calories,0);
 }
 async function getEntries(){
-  try{const r=await window.storage.get(DIET_KEY,false); return r?JSON.parse(r.value):[];}catch(e){return [];}
+  try{const r=await window.storage.get(DIET_KEY_FN(), false); return r?JSON.parse(r.value):[];}catch(e){return [];}
 }
 async function renderDietLog(){
   const entries = await getEntries();
   const listEl = document.getElementById('logList');
-  listEl.innerHTML = entries.length===0 ? '<div class="empty">今天還沒有紀錄，拍張照片開始吧！</div>' :
-    entries.map(e=>`
+  const t = entries.reduce((a,e)=>({calories:a.calories+e.calories,protein:a.protein+e.protein,carbs:a.carbs+e.carbs,fat:a.fat+e.fat}),{calories:0,protein:0,carbs:0,fat:0});
+  const itemsHtml = entries.map(e=>`
       <div class="log-item">
         <div class="li-left">
           <div class="li-name">${escapeHtml(e.name)}${e.tag?`<span class="li-tag">${escapeHtml(e.tag)}</span>`:''}</div>
@@ -644,90 +679,112 @@ async function renderDietLog(){
         <div class="li-cal">${e.calories}</div>
         <button class="del-btn" onclick="deleteEntry('${e.id}')">✕</button>
       </div>`).join('');
+  const totalRowHtml = entries.length===0 ? '' : `
+      <div class="log-total">
+        <span>總計</span>
+        <span class="log-total-macros">蛋白質 ${t.protein}g・碳水 ${t.carbs}g・脂肪 ${t.fat}g</span>
+        <span class="log-total-cal">${t.calories} 大卡</span>
+      </div>`;
+  listEl.innerHTML = entries.length===0 ? '<div class="empty">今天還沒有紀錄，往上新增食物開始吧！</div>' : itemsHtml + totalRowHtml;
   const burned = await renderExerciseList();
-  const t = entries.reduce((a,e)=>({calories:a.calories+e.calories,protein:a.protein+e.protein,carbs:a.carbs+e.carbs,fat:a.fat+e.fat}),{calories:0,protein:0,carbs:0,fat:0});
-  const net = Math.max(0, t.calories - burned);
   document.getElementById('sumCal').textContent = `${t.calories} / ${targets.calories}`;
-  document.getElementById('sumBurned').textContent = `-${burned}`;
-  document.getElementById('sumNet').textContent = `${net} / ${targets.calories}`;
   document.getElementById('sumProtein').textContent = `${t.protein}/${targets.protein}g`;
   document.getElementById('sumCarbs').textContent = `${t.carbs}/${targets.carbs}g`;
   document.getElementById('sumFat').textContent = `${t.fat}/${targets.fat}g`;
-  document.getElementById('barCal').style.width = Math.min(100, targets.calories? net/targets.calories*100:0)+'%';
+  document.getElementById('barCal').style.width = Math.min(100, targets.calories? t.calories/targets.calories*100:0)+'%';
   document.getElementById('barProtein').style.width = Math.min(100, targets.protein? t.protein/targets.protein*100:0)+'%';
   document.getElementById('barCarbs').style.width = Math.min(100, targets.carbs? t.carbs/targets.carbs*100:0)+'%';
   document.getElementById('barFat').style.width = Math.min(100, targets.fat? t.fat/targets.fat*100:0)+'%';
+
+  const totalBurn = targets.bmr + burned;
+  const deficit = totalBurn - t.calories;
+  document.getElementById('calorieSummary').innerHTML = `
+    <div class="calorie-row"><span>攝取熱量</span><span class="cr-val">${t.calories} 大卡</span></div>
+    <div class="calorie-row"><span>基礎代謝 (BMR)</span><span class="cr-val">${targets.bmr} 大卡</span></div>
+    <div class="calorie-row"><span>運動消耗</span><span class="cr-val">${burned} 大卡</span></div>
+    <div class="calorie-row"><span>總消耗（BMR＋運動）</span><span class="cr-val">${totalBurn} 大卡</span></div>
+    <div class="calorie-row deficit"><span>熱量赤字</span><span class="cr-val ${deficit>=0?'pos':'neg'}">${deficit>=0?'+':''}${deficit} 大卡${deficit>=0?'（赤字）':'（盈餘）'}</span></div>`;
+
+  renderWeeklyChart();
 }
 
-/* ---------- body tracking ---------- */
-let selectedAngle = '正面';
-document.querySelectorAll('.angle-btn').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    document.querySelectorAll('.angle-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    selectedAngle = btn.dataset.angle;
-  });
-});
-
-let pendingBodyPhoto = null;
-document.getElementById('bodyFileInput').addEventListener('change',(e)=>{
-  const file = e.target.files[0];
-  if(!file) return;
-  const reader = new FileReader();
-  reader.onload = ()=>{
-    resizeImage(reader.result, 700, 0.75, (resizedDataUrl)=>{
-      pendingBodyPhoto = resizedDataUrl;
-      document.getElementById('bodyPreviewImg').src = resizedDataUrl;
-      document.getElementById('bodyPreviewWrap').style.display='block';
-    });
-  };
-  reader.readAsDataURL(file);
-});
-
-function resizeImage(dataUrl, maxDim, quality, cb){
-  const img = new Image();
-  img.onload = ()=>{
-    let w = img.width, h = img.height;
-    if(w>h){ if(w>maxDim){h=h*maxDim/w; w=maxDim;} } else { if(h>maxDim){w=w*maxDim/h; h=maxDim;} }
-    const canvas = document.createElement('canvas');
-    canvas.width=w; canvas.height=h;
-    canvas.getContext('2d').drawImage(img,0,0,w,h);
-    cb(canvas.toDataURL('image/jpeg', quality));
-  };
-  img.src = dataUrl;
+async function renderWeeklyChart(){
+  const box = document.getElementById('weeklyChart');
+  if(!box) return;
+  const days = [];
+  for(let i=6;i>=0;i--){
+    const d = new Date();
+    d.setDate(d.getDate()-i);
+    days.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`);
+  }
+  const data = [];
+  for(const date of days){
+    let intake = 0, burn = 0;
+    try{
+      const r = await window.storage.get(`entries:${date}`, false);
+      if(r) intake = JSON.parse(r.value).reduce((a,e)=>a+e.calories,0);
+    }catch(e){}
+    try{
+      const r = await window.storage.get(`exercise:${date}`, false);
+      if(r) burn = JSON.parse(r.value).reduce((a,e)=>a+e.calories,0);
+    }catch(e){}
+    const totalBurn = targets.bmr + burn;
+    data.push({date, intake, burn: totalBurn, deficit: totalBurn - intake});
+  }
+  const w=300,h=150,pad=28;
+  const allVals = data.flatMap(d=>[d.intake,d.burn,d.deficit]);
+  const min = Math.min(0,...allVals), max = Math.max(...allVals,1);
+  const range = (max-min)||1;
+  const stepX = (w-pad*2)/(data.length-1);
+  function lineFor(key,color){
+    const coords = data.map((d,i)=>[pad+i*stepX, pad + (1-(d[key]-min)/range)*(h-pad*2)]);
+    const path = coords.map((c,i)=>(i===0?'M':'L')+c[0].toFixed(1)+','+c[1].toFixed(1)).join(' ');
+    const dots = coords.map(c=>`<circle cx="${c[0]}" cy="${c[1]}" r="2.5" fill="${color}"/>`).join('');
+    return `<path d="${path}" fill="none" stroke="${color}" stroke-width="2"/>${dots}`;
+  }
+  const zeroY = pad + (1-(0-min)/range)*(h-pad*2);
+  const labels = data.map((d,i)=>`<text x="${pad+i*stepX}" y="${h-4}" font-size="7" fill="#6b6b63" text-anchor="middle">${d.date.slice(8)}</text>`).join('');
+  box.innerHTML = `
+    <div class="chart-legend">
+      <span><i class="dotline" style="background:#e8590c"></i>飲食熱量</span>
+      <span><i class="dotline" style="background:#3d5a80"></i>消耗熱量</span>
+      <span><i class="dotline" style="background:#2f6f4e"></i>熱量赤字</span>
+    </div>
+    <svg viewBox="0 0 ${w} ${h}" style="width:100%;">
+      <line x1="${pad}" y1="${zeroY}" x2="${w-pad}" y2="${zeroY}" stroke="#e4e2da" stroke-width="1"/>
+      ${lineFor('intake','#e8590c')}
+      ${lineFor('burn','#3d5a80')}
+      ${lineFor('deficit','#2f6f4e')}
+      ${labels}
+    </svg>`;
 }
-
-function clearBodyPreview(){
-  pendingBodyPhoto = null;
-  document.getElementById('bodyPreviewWrap').style.display='none';
-  document.getElementById('bodyFileInput').value='';
+async function getBodyEntries(){
+  try{const r=await window.storage.get('body-entries', false); return r?JSON.parse(r.value):[];}catch(e){return [];}
+}
+async function addBodyEntry(){
+  const weight = document.getElementById('bf-weight').value ? Number(document.getElementById('bf-weight').value) : null;
+  const bodyFat = document.getElementById('bf-bodyfat').value ? Number(document.getElementById('bf-bodyfat').value) : null;
+  const muscleMass = document.getElementById('bf-muscle').value ? Number(document.getElementById('bf-muscle').value) : null;
+  if(weight==null && bodyFat==null && muscleMass==null){
+    alert('請至少填一項數值（體重／體脂率／肌肉量）');
+    return;
+  }
+  const entries = await getBodyEntries();
+  const date = currentDate;
+  const existingIdx = entries.findIndex(e=>e.date===date);
+  const entry = {
+    id: existingIdx>-1 ? entries[existingIdx].id : Date.now().toString(),
+    date,
+    weight, bodyFat, muscleMass,
+    note: document.getElementById('bf-note').value || ''
+  };
+  if(existingIdx>-1){ entries[existingIdx] = entry; } else { entries.push(entry); }
+  entries.sort((a,b)=>a.date.localeCompare(b.date));
+  await window.storage.set('body-entries', JSON.stringify(entries), false);
   document.getElementById('bf-weight').value='';
   document.getElementById('bf-bodyfat').value='';
   document.getElementById('bf-muscle').value='';
   document.getElementById('bf-note').value='';
-}
-
-async function getBodyEntries(){
-  try{const r=await window.storage.get('body-entries',false); return r?JSON.parse(r.value):[];}catch(e){return [];}
-}
-async function addBodyEntry(){
-  if(!pendingBodyPhoto){return;}
-  const entries = await getBodyEntries();
-  entries.push({
-    id: Date.now().toString(),
-    date: todayKey(),
-    angle: selectedAngle,
-    photo: pendingBodyPhoto,
-    weight: document.getElementById('bf-weight').value ? Number(document.getElementById('bf-weight').value) : null,
-    bodyFat: document.getElementById('bf-bodyfat').value ? Number(document.getElementById('bf-bodyfat').value) : null,
-    muscleMass: document.getElementById('bf-muscle').value ? Number(document.getElementById('bf-muscle').value) : null,
-    note: document.getElementById('bf-note').value || ''
-  });
-  entries.sort((a,b)=>a.date.localeCompare(b.date));
-  try{
-    await window.storage.set('body-entries', JSON.stringify(entries), false);
-  }catch(e){console.error('儲存失敗，照片可能過大',e);}
-  clearBodyPreview();
   renderBodyTab();
 }
 
@@ -739,24 +796,21 @@ async function deleteBodyEntry(id){
 
 async function renderBodyTab(){
   const entries = await getBodyEntries();
-  // timeline
   const tl = document.getElementById('bodyTimeline');
   tl.innerHTML = entries.length===0 ? '<div class="empty">還沒有身形紀錄</div>' :
-    entries.map(e=>`
-      <div class="body-thumb">
-        <img src="${e.photo}" onclick="deleteBodyEntry('${e.id}')">
-        <div class="bt-date">${e.date}</div>
-        <div class="bt-date">${e.angle}</div>
-        ${e.weight?`<div class="bt-weight">${e.weight}kg</div>`:''}
-        ${e.muscleMass?`<div class="bt-muscle">肌 ${e.muscleMass}kg</div>`:''}
+    entries.slice().reverse().map(e=>`
+      <div class="log-item">
+        <div class="li-left">
+          <div class="li-name">${e.date}${e.note?`<span class="li-tag">${escapeHtml(e.note)}</span>`:''}</div>
+          <div class="li-macros">${e.weight!=null?`體重 ${e.weight}kg・`:''}${e.bodyFat!=null?`體脂 ${e.bodyFat}%・`:''}${e.muscleMass!=null?`肌肉 ${e.muscleMass}kg`:''}</div>
+        </div>
+        <button class="del-btn" onclick="deleteBodyEntry('${e.id}')">✕</button>
       </div>`).join('');
 
-  // weight & muscle chart
   renderWeightChart(entries.filter(e=>e.weight!=null || e.muscleMass!=null));
 
-  // compare selects
   const selA = document.getElementById('compareA'), selB = document.getElementById('compareB');
-  const opts = entries.map(e=>`<option value="${e.id}">${e.date}（${e.angle}）${e.weight?' '+e.weight+'kg':''}</option>`).join('');
+  const opts = entries.map(e=>`<option value="${e.id}">${e.date}${e.weight?' ・ '+e.weight+'kg':''}</option>`).join('');
   selA.innerHTML = opts; selB.innerHTML = opts;
   if(entries.length>0){ selA.value = entries[0].id; selB.value = entries[entries.length-1].id; }
   renderCompare();
@@ -804,12 +858,8 @@ async function renderCompare(){
   const idA = document.getElementById('compareA').value;
   const idB = document.getElementById('compareB').value;
   const a = entries.find(e=>e.id===idA), b = entries.find(e=>e.id===idB);
-  const view = document.getElementById('compareView');
   const diffEl = document.getElementById('compareDiff');
-  if(!a || !b){ view.innerHTML=''; diffEl.textContent=''; return; }
-  view.innerHTML = `
-    <div class="compare-col"><img src="${a.photo}"><div class="cc-date">${a.date}</div><div class="cc-weight">${a.angle}${a.weight?' ・ '+a.weight+'kg':''}${a.muscleMass?' ・ 肌 '+a.muscleMass+'kg':''}</div></div>
-    <div class="compare-col"><img src="${b.photo}"><div class="cc-date">${b.date}</div><div class="cc-weight">${b.angle}${b.weight?' ・ '+b.weight+'kg':''}${b.muscleMass?' ・ 肌 '+b.muscleMass+'kg':''}</div></div>`;
+  if(!a || !b){ diffEl.innerHTML=''; return; }
   const lines = [];
   if(a.weight!=null && b.weight!=null){
     const diff = b.weight - a.weight;
@@ -823,7 +873,7 @@ async function renderCompare(){
     const fdiff = b.bodyFat - a.bodyFat;
     lines.push(`<div class="diff-badge ${fdiff<=0?'down':'up'}">體脂率變化：${fdiff>0?'+':''}${fdiff.toFixed(1)} %</div>`);
   }
-  diffEl.innerHTML = lines.join('') || '';
+  diffEl.innerHTML = lines.join('') || '<div class="empty">這兩筆紀錄沒有共同的數值可以比較</div>';
 }
 document.getElementById('compareA').addEventListener('change', renderCompare);
 document.getElementById('compareB').addEventListener('change', renderCompare);
@@ -859,7 +909,7 @@ async function exportExcel(){
   exerciseRows.sort((a,b)=> (a.日期+a.時間).localeCompare(b.日期+b.時間));
 
   const bodyEntries = await getBodyEntries();
-  const bodyRows = bodyEntries.map(e=>({日期:e.date,角度:e.angle,體重:e.weight??'',體脂率:e.bodyFat??'',肌肉量:e.muscleMass??'',備註:e.note||''}));
+  const bodyRows = bodyEntries.map(e=>({日期:e.date,體重:e.weight??'',體脂率:e.bodyFat??'',肌肉量:e.muscleMass??'',備註:e.note||''}));
 
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dietRows.length?dietRows:[{提示:'尚無飲食紀錄'}]), '飲食紀錄');
@@ -870,11 +920,13 @@ async function exportExcel(){
 
 /* ---------- init ---------- */
 (async function init(){
+  ensureFoodRows();
   await loadTargets();
   await renderFavorites();
   await renderDietLog();
   await renderBodyTab();
 })();
+
 </script>
 </body>
 </html>
