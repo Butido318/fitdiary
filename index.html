@@ -424,11 +424,11 @@ function refreshDateUI(){
   document.getElementById('dateInput').value = currentDate;
   const isToday = currentDate===todayKey();
   const dayLabel = isToday ? '今日' : shortDateLabel(currentDate);
-  document.getElementById('pageTitle').textContent = isToday ? '今天吃了什麼？' : formatDateLabel(currentDate)+' 吃了什麼？';
+  document.getElementById('pageTitle').textContent = isToday ? '飲食健康紀錄' : formatDateLabel(currentDate)+' 吃了什麼？';
   document.getElementById('todayBtn').classList.toggle('is-today', isToday);
   document.getElementById('logTitle').textContent = `${dayLabel}紀錄`;
   document.getElementById('calorieSummaryTitle').textContent = `${dayLabel}熱量收支`;
-  document.getElementById('addBodyBtn').textContent = `加入${dayLabel}身形紀錄`;
+  document.getElementById('addBodyBtn').textContent = `加入${dayLabel}紀錄`;
 }
 function setToToday(){
   currentDate = todayKey();
