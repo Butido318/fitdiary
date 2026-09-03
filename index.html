@@ -301,7 +301,7 @@
           </select>
         </div>
         <div class="field"><label>時間 (分鐘)</label><input type="number" id="ex-duration" placeholder="30"></div>
-        <div class="field"><label>體重 (kg)</label><input type="number" id="ex-weight" step="0.1" placeholder="從身形紀錄帶入"></div>
+        <div class="field"><label>體重 (kg)</label><input type="number" id="ex-weight" step="0.1" placeholder="從inbody紀錄帶入"></div>
       </div>
       <button class="add-btn" onclick="addExercise()">計算並加入運動紀錄</button>
       <div class="note">＊ 以 MET 公式估算：消耗大卡 = MET × 體重(kg) × 時間(小時)，實際消耗因人而異，僅供參考。</div>
@@ -355,7 +355,7 @@
 
     <div class="section-title">匯出資料</div>
     <div class="settings-card">
-      <div style="font-size:12px;color:var(--muted);line-height:1.6;">匯出所有飲食紀錄與身形紀錄（含體重／體脂數字，不含照片檔案）為 Excel 檔。</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.6;">匯出所有紀錄（含體重／體脂數字）為 Excel 檔。</div>
       <button class="export-btn" onclick="exportExcel()">匯出成 Excel</button>
     </div>
   </div>
