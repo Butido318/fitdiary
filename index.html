@@ -321,7 +321,7 @@
         <div class="field"><label>肌肉量 (kg)</label><input type="number" id="bf-muscle" step="0.1" placeholder="選填"></div>
       </div>
       <div class="note-field"><label>備註（聚餐／生理期／訓練日…）</label><input type="text" id="bf-note" placeholder="選填"></div>
-      <button class="add-btn" id="addBodyBtn" onclick="addBodyEntry()">加入今日身形紀錄</button>
+      <button class="add-btn" id="addBodyBtn" onclick="addBodyEntry()">加入今日紀錄</button>
     </div>
 
     <div class="section-title">時間軸</div>
@@ -841,7 +841,7 @@ async function deleteBodyEntry(id){
 async function renderBodyTab(){
   const entries = await getBodyEntries();
   const tl = document.getElementById('bodyTimeline');
-  tl.innerHTML = entries.length===0 ? '<div class="empty">還沒有身形紀錄</div>' :
+  tl.innerHTML = entries.length===0 ? '<div class="empty">還沒有紀錄</div>' :
     entries.slice().reverse().map(e=>`
       <div class="log-item">
         <div class="li-left">
