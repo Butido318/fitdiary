@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>飲食與塑形紀錄</title>
+<title>飲食與身形紀錄</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
@@ -233,7 +233,7 @@
 
   <div class="tabbar">
     <button class="tab-btn active" data-tab="diet">飲食</button>
-    <button class="tab-btn" data-tab="body">indody</button>
+    <button class="tab-btn" data-tab="body">身形</button>
     <button class="tab-btn" data-tab="settings">目標／匯出</button>
   </div>
 
@@ -250,10 +250,22 @@
     </div>
 
     <div id="loadingBox" class="loading" style="display:none;">
-      <div class="spinner"></div><span>正在估算中…</span>
+      <div class="spinner"></div><span>正在估算營養中…</span>
     </div>
     <div id="errorBox" class="error-box" style="display:none;"></div>
     <div id="resultCard"></div>
+
+    <div class="settings-card">
+      <div class="fav-label" style="margin-bottom:8px;">或直接輸入總計（不用 AI 估算）</div>
+      <div class="field-grid" style="grid-template-columns:1fr 1fr 1fr 1fr;">
+        <div class="field"><label>熱量</label><input type="number" id="manual-cal" placeholder="大卡"></div>
+        <div class="field"><label>蛋白質</label><input type="number" id="manual-protein" placeholder="g"></div>
+        <div class="field"><label>碳水</label><input type="number" id="manual-carbs" placeholder="g"></div>
+        <div class="field"><label>脂肪</label><input type="number" id="manual-fat" placeholder="g"></div>
+      </div>
+      <div class="note-field"><label>備註（選填，預設「手動輸入」）</label><input type="text" id="manual-name" placeholder="例如：外食估計"></div>
+      <button class="add-btn" onclick="addManualEntry()">直接加入紀錄</button>
+    </div>
 
     <div class="section-title" id="logTitle">今日紀錄</div>
     <div id="logList"></div>
@@ -365,7 +377,7 @@
 /* ---------- Apps Script 後端網址 ----------
    部署好 apps_script.gs 之後，把下面這行換成你的 Web App 網址
    （長得像 https://script.google.com/macros/s/xxxx/exec） */
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwn_JGRmJUFiqqe33xSYy_9NmcPTRKKeWNDjP39YwYuh4nusmQoDdLZES5eceUt5kdOjg/exec";
+const APPS_SCRIPT_URL = "請把你部署好的 Google Apps Script 網址貼在這裡";
 
 /* ---------- storage adapter（透過 Apps Script 讀寫 Google 試算表） ---------- */
 const storage = {
@@ -424,11 +436,11 @@ function refreshDateUI(){
   document.getElementById('dateInput').value = currentDate;
   const isToday = currentDate===todayKey();
   const dayLabel = isToday ? '今日' : shortDateLabel(currentDate);
-  document.getElementById('pageTitle').textContent = isToday ? '飲食與塑形紀錄？' : formatDateLabel(currentDate)+' 運動紀錄？';
+  document.getElementById('pageTitle').textContent = isToday ? '今天吃了什麼？' : formatDateLabel(currentDate)+' 吃了什麼？';
   document.getElementById('todayBtn').classList.toggle('is-today', isToday);
   document.getElementById('logTitle').textContent = `${dayLabel}紀錄`;
   document.getElementById('calorieSummaryTitle').textContent = `${dayLabel}熱量收支`;
-  document.getElementById('addBodyBtn').textContent = `加入${dayLabel}inbody紀錄`;
+  document.getElementById('addBodyBtn').textContent = `加入${dayLabel}身形紀錄`;
 }
 function setToToday(){
   currentDate = todayKey();
@@ -658,6 +670,32 @@ async function addToLog(count){
   clearResult();
   renderDietLog();
 }
+async function addManualEntry(){
+  const cal = Number(document.getElementById('manual-cal').value)||0;
+  const protein = Number(document.getElementById('manual-protein').value)||0;
+  const carbs = Number(document.getElementById('manual-carbs').value)||0;
+  const fat = Number(document.getElementById('manual-fat').value)||0;
+  if(!cal && !protein && !carbs && !fat){
+    alert('請至少填一項數值（熱量／蛋白質／碳水／脂肪）');
+    return;
+  }
+  const entry = {
+    id: Date.now().toString(),
+    time: new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}),
+    name: document.getElementById('manual-name').value || '手動輸入',
+    portion: '', tag: '',
+    calories: cal, protein, carbs, fat
+  };
+  const existing = await getEntries();
+  existing.push(entry);
+  await storage.set(DIET_KEY_FN(), JSON.stringify(existing));
+  document.getElementById('manual-cal').value='';
+  document.getElementById('manual-protein').value='';
+  document.getElementById('manual-carbs').value='';
+  document.getElementById('manual-fat').value='';
+  document.getElementById('manual-name').value='';
+  renderDietLog();
+}
 async function deleteEntry(id){
   const existing = await getEntries();
   await storage.set(DIET_KEY_FN(), JSON.stringify(existing.filter(e=>e.id!==id)));
@@ -677,7 +715,7 @@ async function addExercise(){
     if(withWeight.length>0) weight = withWeight[withWeight.length-1].weight;
   }
   if(!duration || !weight){
-    alert('請輸入運動時間，並確認體重（可先到「inbody」分頁記錄一次體重）');
+    alert('請輸入運動時間，並確認體重（可先到「身形」分頁記錄一次體重）');
     return;
   }
   const calories = Math.round(met * weight * (duration/60));
