@@ -3,7 +3,18 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>飲食與塑形紀錄</title>
+<title>fitdiary</title>
+<!-- iOS Safari 專用捷徑名稱 -->
+<meta name="apple-mobile-web-app-title" content="fitdiary">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<!-- PWA 設定檔（Android 必備） -->
+<link rel="manifest" href="manifest.json">
+<!-- 針對 iPhone / iOS 主畫面捷徑 -->
+<link rel="apple-touch-icon" href="icon.png">
+<!-- 針對 Android / Chrome 主畫面捷徑 -->
+<link rel="icon" type="image/png" sizes="192x192" href="icon.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon.png">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
@@ -223,8 +234,8 @@
 <body>
 <div class="wrap">
   <header>
-    <div class="eyebrow">今天做了什麼？</div>
-    <h1 id="pageTitle">飲食與塑形紀錄</h1>
+    <div class="eyebrow">飲食與身形紀錄</div>
+    <h1 id="pageTitle">今天吃了什麼？</h1>
     <div class="date-row">
       <input type="date" id="dateInput">
       <button class="today-btn" id="todayBtn" onclick="setToToday()">回到今天</button>
@@ -233,7 +244,7 @@
 
   <div class="tabbar">
     <button class="tab-btn active" data-tab="diet">飲食</button>
-    <button class="tab-btn" data-tab="body">inbody</button>
+    <button class="tab-btn" data-tab="body">身形</button>
     <button class="tab-btn" data-tab="settings">目標／匯出</button>
   </div>
 
@@ -377,7 +388,7 @@
 /* ---------- Apps Script 後端網址 ----------
    部署好 apps_script.gs 之後，把下面這行換成你的 Web App 網址
    （長得像 https://script.google.com/macros/s/xxxx/exec） */
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwn_JGRmJUFiqqe33xSYy_9NmcPTRKKeWNDjP39YwYuh4nusmQoDdLZES5eceUt5kdOjg/exec";
+const APPS_SCRIPT_URL = "請把你部署好的 Google Apps Script 網址貼在這裡";
 
 /* ---------- storage adapter（透過 Apps Script 讀寫 Google 試算表） ---------- */
 const storage = {
@@ -389,24 +400,24 @@ const storage = {
     }catch(e){ console.error('storage.get failed', e); return null; }
   },
   async set(key, value){
-    try{
-      const res = await fetch(APPS_SCRIPT_URL, {
-        method:'POST',
-        headers:{'Content-Type':'text/plain;charset=utf-8'},
-        body: JSON.stringify({action:'set', key, value})
-      });
-      return await res.json();
-    }catch(e){ console.error('storage.set failed', e); return null; }
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({action:'set', key, value})
+    });
+    const data = await res.json();
+    if(data && data.error){ throw new Error('儲存失敗：'+(data.error.message||data.error)); }
+    return data;
   },
   async delete(key){
-    try{
-      const res = await fetch(APPS_SCRIPT_URL, {
-        method:'POST',
-        headers:{'Content-Type':'text/plain;charset=utf-8'},
-        body: JSON.stringify({action:'delete', key})
-      });
-      return await res.json();
-    }catch(e){ console.error('storage.delete failed', e); return null; }
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method:'POST',
+      headers:{'Content-Type':'text/plain;charset=utf-8'},
+      body: JSON.stringify({action:'delete', key})
+    });
+    const data = await res.json();
+    if(data && data.error){ throw new Error('刪除失敗：'+(data.error.message||data.error)); }
+    return data;
   },
   async list(prefix){
     try{
@@ -415,6 +426,13 @@ const storage = {
     }catch(e){ console.error('storage.list failed', e); return {keys:[]}; }
   }
 };
+
+function showStorageError(err){
+  console.error(err);
+  document.getElementById('errorBox').textContent = err.message || String(err);
+  document.getElementById('errorBox').style.display='block';
+}
+
 
 /* ---------- utils ---------- */
 function escapeHtml(str){const d=document.createElement('div');d.textContent=str||'';return d.innerHTML;}
@@ -436,11 +454,11 @@ function refreshDateUI(){
   document.getElementById('dateInput').value = currentDate;
   const isToday = currentDate===todayKey();
   const dayLabel = isToday ? '今日' : shortDateLabel(currentDate);
-  document.getElementById('pageTitle').textContent = isToday ? '飲食與塑形紀錄' : formatDateLabel(currentDate)+' 塑形紀錄';
+  document.getElementById('pageTitle').textContent = isToday ? '今天吃了什麼？' : formatDateLabel(currentDate)+' 吃了什麼？';
   document.getElementById('todayBtn').classList.toggle('is-today', isToday);
   document.getElementById('logTitle').textContent = `${dayLabel}紀錄`;
   document.getElementById('calorieSummaryTitle').textContent = `${dayLabel}熱量收支`;
-  document.getElementById('addBodyBtn').textContent = `加入${dayLabel}inbody`;
+  document.getElementById('addBodyBtn').textContent = `加入${dayLabel}身形紀錄`;
 }
 function setToToday(){
   currentDate = todayKey();
@@ -490,7 +508,11 @@ async function saveTargets(){
     document.getElementById('targetToast').textContent = '已儲存';
     setTimeout(()=>document.getElementById('targetToast').textContent='',1500);
     renderDietLog();
-  }catch(e){console.error(e);}
+  }catch(e){
+    console.error(e);
+    document.getElementById('targetToast').style.color = 'var(--flame)';
+    document.getElementById('targetToast').textContent = '儲存失敗：'+(e.message||e);
+  }
 }
 
 /* ---------- favorites ---------- */
@@ -656,15 +678,17 @@ async function addToLog(count){
       fat: Number(document.getElementById(`it-fat-${i}`).value)||0,
     });
   }
-  if(saveFav){
-    const favs = await getFavorites();
-    entries.forEach(e=>favs.push({id:e.id+'f',name:e.name,portion:e.portion,calories:e.calories,protein:e.protein,carbs:e.carbs,fat:e.fat}));
-    await storage.set('favorites', JSON.stringify(favs));
-    renderFavorites();
-  }
-  const existing = await getEntries();
-  existing.push(...entries);
-  await storage.set(DIET_KEY_FN(), JSON.stringify(existing));
+  try{
+    if(saveFav){
+      const favs = await getFavorites();
+      entries.forEach(e=>favs.push({id:e.id+'f',name:e.name,portion:e.portion,calories:e.calories,protein:e.protein,carbs:e.carbs,fat:e.fat}));
+      await storage.set('favorites', JSON.stringify(favs));
+      renderFavorites();
+    }
+    const existing = await getEntries();
+    existing.push(...entries);
+    await storage.set(DIET_KEY_FN(), JSON.stringify(existing));
+  }catch(err){ showStorageError(err); return; }
   document.getElementById('foodRows').innerHTML='';
   addFoodRow(); addFoodRow();
   clearResult();
@@ -686,9 +710,11 @@ async function addManualEntry(){
     portion: '', tag: '',
     calories: cal, protein, carbs, fat
   };
-  const existing = await getEntries();
-  existing.push(entry);
-  await storage.set(DIET_KEY_FN(), JSON.stringify(existing));
+  try{
+    const existing = await getEntries();
+    existing.push(entry);
+    await storage.set(DIET_KEY_FN(), JSON.stringify(existing));
+  }catch(err){ showStorageError(err); return; }
   document.getElementById('manual-cal').value='';
   document.getElementById('manual-protein').value='';
   document.getElementById('manual-carbs').value='';
@@ -697,8 +723,10 @@ async function addManualEntry(){
   renderDietLog();
 }
 async function deleteEntry(id){
-  const existing = await getEntries();
-  await storage.set(DIET_KEY_FN(), JSON.stringify(existing.filter(e=>e.id!==id)));
+  try{
+    const existing = await getEntries();
+    await storage.set(DIET_KEY_FN(), JSON.stringify(existing.filter(e=>e.id!==id)));
+  }catch(err){ showStorageError(err); return; }
   renderDietLog();
 }
 async function getExerciseEntries(){
@@ -715,19 +743,23 @@ async function addExercise(){
     if(withWeight.length>0) weight = withWeight[withWeight.length-1].weight;
   }
   if(!duration || !weight){
-    alert('請輸入運動時間，並確認體重（可先到「inbody」分頁記錄一次體重）');
+    alert('請輸入運動時間，並確認體重（可先到「身形」分頁記錄一次體重）');
     return;
   }
   const calories = Math.round(met * weight * (duration/60));
-  const entries = await getExerciseEntries();
-  entries.push({id:Date.now().toString(),time:new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}),name:sel.value,duration,weight,calories});
-  await storage.set(EXERCISE_KEY_FN(), JSON.stringify(entries));
+  try{
+    const entries = await getExerciseEntries();
+    entries.push({id:Date.now().toString(),time:new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}),name:sel.value,duration,weight,calories});
+    await storage.set(EXERCISE_KEY_FN(), JSON.stringify(entries));
+  }catch(err){ showStorageError(err); return; }
   document.getElementById('ex-duration').value='';
   renderDietLog();
 }
 async function deleteExercise(id){
-  const entries = await getExerciseEntries();
-  await storage.set(EXERCISE_KEY_FN(), JSON.stringify(entries.filter(e=>e.id!==id)));
+  try{
+    const entries = await getExerciseEntries();
+    await storage.set(EXERCISE_KEY_FN(), JSON.stringify(entries.filter(e=>e.id!==id)));
+  }catch(err){ showStorageError(err); return; }
   renderDietLog();
 }
 async function renderExerciseList(){
@@ -850,18 +882,20 @@ async function addBodyEntry(){
     alert('請至少填一項數值（體重／體脂率／肌肉量）');
     return;
   }
-  const entries = await getBodyEntries();
   const date = currentDate;
-  const existingIdx = entries.findIndex(e=>e.date===date);
-  const entry = {
-    id: existingIdx>-1 ? entries[existingIdx].id : Date.now().toString(),
-    date,
-    weight, bodyFat, muscleMass,
-    note: document.getElementById('bf-note').value || ''
-  };
-  if(existingIdx>-1){ entries[existingIdx] = entry; } else { entries.push(entry); }
-  entries.sort((a,b)=>a.date.localeCompare(b.date));
-  await storage.set('body-entries', JSON.stringify(entries));
+  try{
+    const entries = await getBodyEntries();
+    const existingIdx = entries.findIndex(e=>e.date===date);
+    const entry = {
+      id: existingIdx>-1 ? entries[existingIdx].id : Date.now().toString(),
+      date,
+      weight, bodyFat, muscleMass,
+      note: document.getElementById('bf-note').value || ''
+    };
+    if(existingIdx>-1){ entries[existingIdx] = entry; } else { entries.push(entry); }
+    entries.sort((a,b)=>a.date.localeCompare(b.date));
+    await storage.set('body-entries', JSON.stringify(entries));
+  }catch(err){ alert('儲存失敗：'+(err.message||err)); return; }
   document.getElementById('bf-weight').value='';
   document.getElementById('bf-bodyfat').value='';
   document.getElementById('bf-muscle').value='';
@@ -870,8 +904,10 @@ async function addBodyEntry(){
 }
 
 async function deleteBodyEntry(id){
-  const entries = await getBodyEntries();
-  await storage.set('body-entries', JSON.stringify(entries.filter(e=>e.id!==id)));
+  try{
+    const entries = await getBodyEntries();
+    await storage.set('body-entries', JSON.stringify(entries.filter(e=>e.id!==id)));
+  }catch(err){ alert('刪除失敗：'+(err.message||err)); return; }
   renderBodyTab();
 }
 
@@ -995,8 +1031,8 @@ async function exportExcel(){
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dietRows.length?dietRows:[{提示:'尚無飲食紀錄'}]), '飲食紀錄');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(exerciseRows.length?exerciseRows:[{提示:'尚無運動紀錄'}]), '運動紀錄');
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(bodyRows.length?bodyRows:[{提示:'尚無inbody紀錄'}]), 'inbody紀錄');
-  XLSX.writeFile(wb, `飲食塑形紀錄_${todayKey()}.xlsx`);
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(bodyRows.length?bodyRows:[{提示:'尚無身形紀錄'}]), '身形紀錄');
+  XLSX.writeFile(wb, `飲食身形紀錄_${todayKey()}.xlsx`);
 }
 
 /* ---------- init ---------- */
