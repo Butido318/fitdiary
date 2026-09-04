@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>飲食與身形紀錄</title>
+<title>飲食與塑形紀錄</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
@@ -223,8 +223,8 @@
 <body>
 <div class="wrap">
   <header>
-    <div class="eyebrow">飲食與身形紀錄</div>
-    <h1 id="pageTitle">今天吃了什麼？</h1>
+    <div class="eyebrow">今天做了什麼？</div>
+    <h1 id="pageTitle">飲食與塑形紀錄</h1>
     <div class="date-row">
       <input type="date" id="dateInput">
       <button class="today-btn" id="todayBtn" onclick="setToToday()">回到今天</button>
@@ -233,7 +233,7 @@
 
   <div class="tabbar">
     <button class="tab-btn active" data-tab="diet">飲食</button>
-    <button class="tab-btn" data-tab="body">身形</button>
+    <button class="tab-btn" data-tab="body">inbody</button>
     <button class="tab-btn" data-tab="settings">目標／匯出</button>
   </div>
 
@@ -436,11 +436,11 @@ function refreshDateUI(){
   document.getElementById('dateInput').value = currentDate;
   const isToday = currentDate===todayKey();
   const dayLabel = isToday ? '今日' : shortDateLabel(currentDate);
-  document.getElementById('pageTitle').textContent = isToday ? '今天吃了什麼？' : formatDateLabel(currentDate)+' 吃了什麼？';
+  document.getElementById('pageTitle').textContent = isToday ? '飲食與塑形紀錄' : formatDateLabel(currentDate)+' 塑形紀錄';
   document.getElementById('todayBtn').classList.toggle('is-today', isToday);
   document.getElementById('logTitle').textContent = `${dayLabel}紀錄`;
   document.getElementById('calorieSummaryTitle').textContent = `${dayLabel}熱量收支`;
-  document.getElementById('addBodyBtn').textContent = `加入${dayLabel}身形紀錄`;
+  document.getElementById('addBodyBtn').textContent = `加入${dayLabel}inbody`;
 }
 function setToToday(){
   currentDate = todayKey();
@@ -715,7 +715,7 @@ async function addExercise(){
     if(withWeight.length>0) weight = withWeight[withWeight.length-1].weight;
   }
   if(!duration || !weight){
-    alert('請輸入運動時間，並確認體重（可先到「身形」分頁記錄一次體重）');
+    alert('請輸入運動時間，並確認體重（可先到「inbody」分頁記錄一次體重）');
     return;
   }
   const calories = Math.round(met * weight * (duration/60));
@@ -995,8 +995,8 @@ async function exportExcel(){
   const wb = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(dietRows.length?dietRows:[{提示:'尚無飲食紀錄'}]), '飲食紀錄');
   XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(exerciseRows.length?exerciseRows:[{提示:'尚無運動紀錄'}]), '運動紀錄');
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(bodyRows.length?bodyRows:[{提示:'尚無身形紀錄'}]), '身形紀錄');
-  XLSX.writeFile(wb, `飲食身形紀錄_${todayKey()}.xlsx`);
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(bodyRows.length?bodyRows:[{提示:'尚無inbody紀錄'}]), 'inbody紀錄');
+  XLSX.writeFile(wb, `飲食塑形紀錄_${todayKey()}.xlsx`);
 }
 
 /* ---------- init ---------- */
