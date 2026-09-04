@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>飲食健康紀錄</title>
+<title>飲食與塑形紀錄</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
@@ -223,8 +223,8 @@
 <body>
 <div class="wrap">
   <header>
-    <div class="eyebrow">今天做了什麼？</div>
-    <h1 id="pageTitle">飲食健康紀錄</h1>
+    <div class="eyebrow">飲食與身形紀錄</div>
+    <h1 id="pageTitle">今天吃了什麼？</h1>
     <div class="date-row">
       <input type="date" id="dateInput">
       <button class="today-btn" id="todayBtn" onclick="setToToday()">回到今天</button>
@@ -233,7 +233,7 @@
 
   <div class="tabbar">
     <button class="tab-btn active" data-tab="diet">飲食</button>
-    <button class="tab-btn" data-tab="body">inbody</button>
+    <button class="tab-btn" data-tab="body">indody</button>
     <button class="tab-btn" data-tab="settings">目標／匯出</button>
   </div>
 
@@ -242,15 +242,15 @@
     <div id="favArea"></div>
 
     <div class="settings-card">
-      <div class="fav-label" style="margin-bottom:8px;">新增明細（食物名稱＋估計份量或重量）</div>
+      <div class="fav-label" style="margin-bottom:8px;">新增食物（食物名稱＋估計份量或重量）</div>
       <div id="foodRows"></div>
       <button class="cancel-btn" onclick="addFoodRow()">＋ 新增一列</button>
-      <button class="add-btn" onclick="estimateFoodRows()">AI 估算</button>
-      <div class="note">＊ 填「食物名稱」與「份量或重量」（例如：150g、1碗、半份），AI 會依你填的量估算熱量與營養。</div>
+      <button class="add-btn" onclick="estimateFoodRows()">AI 估算營養</button>
+      <div class="note">＊ 填「食物名稱」與「份量或重量」（例如：150g、1碗、半份），AI 會依你填的量估算熱量與營養，不需要拍照。</div>
     </div>
 
     <div id="loadingBox" class="loading" style="display:none;">
-      <div class="spinner"></div><span>正在計算中…</span>
+      <div class="spinner"></div><span>正在估算中…</span>
     </div>
     <div id="errorBox" class="error-box" style="display:none;"></div>
     <div id="resultCard"></div>
@@ -301,7 +301,7 @@
           </select>
         </div>
         <div class="field"><label>時間 (分鐘)</label><input type="number" id="ex-duration" placeholder="30"></div>
-        <div class="field"><label>體重 (kg)</label><input type="number" id="ex-weight" step="0.1" placeholder="從inbody紀錄帶入"></div>
+        <div class="field"><label>體重 (kg)</label><input type="number" id="ex-weight" step="0.1" placeholder="從身形紀錄帶入"></div>
       </div>
       <button class="add-btn" onclick="addExercise()">計算並加入運動紀錄</button>
       <div class="note">＊ 以 MET 公式估算：消耗大卡 = MET × 體重(kg) × 時間(小時)，實際消耗因人而異，僅供參考。</div>
@@ -321,7 +321,7 @@
         <div class="field"><label>肌肉量 (kg)</label><input type="number" id="bf-muscle" step="0.1" placeholder="選填"></div>
       </div>
       <div class="note-field"><label>備註（聚餐／生理期／訓練日…）</label><input type="text" id="bf-note" placeholder="選填"></div>
-      <button class="add-btn" id="addBodyBtn" onclick="addBodyEntry()">加入今日紀錄</button>
+      <button class="add-btn" id="addBodyBtn" onclick="addBodyEntry()">加入今日身形紀錄</button>
     </div>
 
     <div class="section-title">時間軸</div>
@@ -355,7 +355,7 @@
 
     <div class="section-title">匯出資料</div>
     <div class="settings-card">
-      <div style="font-size:12px;color:var(--muted);line-height:1.6;">匯出所有紀錄（含體重／體脂數字）為 Excel 檔。</div>
+      <div style="font-size:12px;color:var(--muted);line-height:1.6;">匯出所有飲食紀錄與身形紀錄（含體重／體脂數字，不含照片檔案）為 Excel 檔。</div>
       <button class="export-btn" onclick="exportExcel()">匯出成 Excel</button>
     </div>
   </div>
@@ -424,11 +424,11 @@ function refreshDateUI(){
   document.getElementById('dateInput').value = currentDate;
   const isToday = currentDate===todayKey();
   const dayLabel = isToday ? '今日' : shortDateLabel(currentDate);
-  document.getElementById('pageTitle').textContent = isToday ? '飲食健康紀錄' : formatDateLabel(currentDate)+' 吃了什麼？';
+  document.getElementById('pageTitle').textContent = isToday ? '飲食與塑形紀錄？' : formatDateLabel(currentDate)+' 運動紀錄？';
   document.getElementById('todayBtn').classList.toggle('is-today', isToday);
   document.getElementById('logTitle').textContent = `${dayLabel}紀錄`;
   document.getElementById('calorieSummaryTitle').textContent = `${dayLabel}熱量收支`;
-  document.getElementById('addBodyBtn').textContent = `加入${dayLabel}紀錄`;
+  document.getElementById('addBodyBtn').textContent = `加入${dayLabel}inbody紀錄`;
 }
 function setToToday(){
   currentDate = todayKey();
@@ -550,8 +550,7 @@ ${listText}
 單位：calories 為大卡，protein/carbs/fat 為公克。項目順序需與使用者列出的順序一致。`;
     const response = await fetch(APPS_SCRIPT_URL,{
       method:"POST",headers:{"Content-Type":"text/plain;charset=utf-8"},
-      body: JSON.stringify({action:"estimate", payload:{model:"claude-sonnet-5",max_tokens:1200,
-        messages:[{role:"user",content:prompt}]}})
+      body: JSON.stringify({action:"estimate", prompt})
     });
     const data = await response.json();
     // 注意：Apps Script 代理一律回傳 HTTP 200，錯誤要看 JSON 內容本身，不能只看 response.ok
@@ -559,10 +558,10 @@ ${listText}
       const msg = typeof data.error === 'string' ? data.error : (data.error.message || JSON.stringify(data.error));
       throw new Error(msg);
     }
-    if(!data.content || !data.content.length){
-      throw new Error('API 沒有回傳內容，請確認 APPS_SCRIPT_URL 是否正確、Apps Script 是否已設定 ANTHROPIC_API_KEY');
+    if(!data.text){
+      throw new Error('API 沒有回傳內容，請確認 APPS_SCRIPT_URL 是否正確、Apps Script 是否已設定 GEMINI_API_KEY');
     }
-    const text = data.content.map(b=>b.text||'').join('');
+    const text = data.text;
     const jsonStart = text.indexOf('{');
     const jsonEnd = text.lastIndexOf('}');
     if(jsonStart===-1 || jsonEnd===-1){
@@ -678,7 +677,7 @@ async function addExercise(){
     if(withWeight.length>0) weight = withWeight[withWeight.length-1].weight;
   }
   if(!duration || !weight){
-    alert('請輸入運動時間，並確認體重（可先到「身形」分頁記錄一次體重）');
+    alert('請輸入運動時間，並確認體重（可先到「inbody」分頁記錄一次體重）');
     return;
   }
   const calories = Math.round(met * weight * (duration/60));
@@ -841,7 +840,7 @@ async function deleteBodyEntry(id){
 async function renderBodyTab(){
   const entries = await getBodyEntries();
   const tl = document.getElementById('bodyTimeline');
-  tl.innerHTML = entries.length===0 ? '<div class="empty">還沒有紀錄</div>' :
+  tl.innerHTML = entries.length===0 ? '<div class="empty">還沒有身形紀錄</div>' :
     entries.slice().reverse().map(e=>`
       <div class="log-item">
         <div class="li-left">
