@@ -454,7 +454,7 @@ function refreshDateUI(){
   document.getElementById('dateInput').value = currentDate;
   const isToday = currentDate===todayKey();
   const dayLabel = isToday ? '今日' : shortDateLabel(currentDate);
-  document.getElementById('pageTitle').textContent = isToday ? '今天飲食紀錄' : formatDateLabel(currentDate)+' 飲食紀錄';
+  document.getElementById('pageTitle').textContent = isToday ? '飲食塑身紀錄' : formatDateLabel(currentDate)+' 飲食紀錄';
   document.getElementById('todayBtn').classList.toggle('is-today', isToday);
   document.getElementById('logTitle').textContent = `${dayLabel}紀錄`;
   document.getElementById('calorieSummaryTitle').textContent = `${dayLabel}熱量收支`;
