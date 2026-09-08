@@ -122,10 +122,11 @@
   /* favorites */
   .fav-row{display:flex;gap:8px;overflow-x:auto;margin-bottom:12px;padding-bottom:2px;}
   .fav-chip{
-    flex:0 0 auto;background:var(--card);border:1px solid var(--soft-line);border-radius:20px;
-    padding:7px 14px;font-size:12px;font-weight:600;white-space:nowrap;cursor:pointer;
+    flex:0 0 auto;display:flex;align-items:center;gap:6px;background:var(--card);border:1px solid var(--soft-line);border-radius:20px;
+    padding:7px 10px 7px 14px;font-size:12px;font-weight:600;white-space:nowrap;cursor:pointer;
   }
   .fav-chip:active{background:#f0efe9;}
+  .fav-chip .fav-del{background:none;border:none;color:var(--muted);font-size:13px;cursor:pointer;padding:0 2px;line-height:1;}
   .fav-label{font-size:11px;color:var(--muted);margin-bottom:6px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;}
 
   /* Nutrition Facts label card */
@@ -433,9 +434,10 @@ function showStorageError(err){
   document.getElementById('errorBox').style.display='block';
 }
 
-
 /* ---------- utils ---------- */
 function escapeHtml(str){const d=document.createElement('div');d.textContent=str||'';return d.innerHTML;}
+function round1(n){ return Math.round((Number(n||0)+Number.EPSILON)*10)/10; }
+function fmtNum(n){ const r=round1(n); return Number.isInteger(r) ? String(r) : r.toFixed(1); }
 function todayKey(){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
 let currentDate = todayKey();
 function DIET_KEY_FN(){ return `entries:${currentDate}`; }
@@ -524,8 +526,18 @@ async function renderFavorites(){
   const area = document.getElementById('favArea');
   if(favs.length===0){area.innerHTML='';return;}
   area.innerHTML = `<div class="fav-label">常用食物</div><div class="fav-row">${
-    favs.map(f=>`<div class="fav-chip" onclick="quickAddFav('${f.id}')">${escapeHtml(f.name)}・${f.calories}大卡</div>`).join('')
+    favs.map(f=>`<div class="fav-chip">
+        <span onclick="quickAddFav('${f.id}')">${escapeHtml(f.name)}・${fmtNum(f.calories)}大卡</span>
+        <button class="fav-del" onclick="event.stopPropagation();deleteFavorite('${f.id}')">✕</button>
+      </div>`).join('')
   }</div>`;
+}
+async function deleteFavorite(id){
+  try{
+    const favs = await getFavorites();
+    await storage.set('favorites', JSON.stringify(favs.filter(f=>f.id!==id)));
+  }catch(err){ showStorageError(err); return; }
+  renderFavorites();
 }
 async function quickAddFav(id){
   const favs = await getFavorites();
@@ -650,7 +662,7 @@ function renderResultCard(result){
         </select>
       </div>
       ${itemsHtml}
-      <div class="items-total"><span>合計</span><span>${total.calories} 大卡</span></div>
+      <div class="items-total"><span>合計</span><span>${fmtNum(total.calories)} 大卡</span></div>
       ${result.note?`<div class="note">＊ ${escapeHtml(result.note)}</div>`:''}
       <div class="note">＊ AI 依你填寫的份量估算，僅供參考，皆可手動修改。</div>
       <label class="fav-check"><input type="checkbox" id="f-savefav"> 加入常用食物清單（整份餐點）</label>
@@ -771,7 +783,7 @@ async function renderExerciseList(){
         <div class="ei-name">${escapeHtml(e.name)}</div>
         <div class="ei-sub">${e.time}｜${e.duration} 分鐘・${e.weight}kg</div>
       </div>
-      <div class="ei-cal">-${e.calories}</div>
+      <div class="ei-cal">-${fmtNum(e.calories)}</div>
       <button class="del-btn" onclick="deleteExercise('${e.id}')">✕</button>
     </div>`).join('');
   return entries.reduce((a,e)=>a+e.calories,0);
@@ -787,23 +799,23 @@ async function renderDietLog(){
       <div class="log-item">
         <div class="li-left">
           <div class="li-name">${escapeHtml(e.name)}${e.tag?`<span class="li-tag">${escapeHtml(e.tag)}</span>`:''}</div>
-          <div class="li-macros">${e.time}｜蛋白質 ${e.protein}g・碳水 ${e.carbs}g・脂肪 ${e.fat}g</div>
+          <div class="li-macros">${e.time}｜蛋白質 ${fmtNum(e.protein)}g・碳水 ${fmtNum(e.carbs)}g・脂肪 ${fmtNum(e.fat)}g</div>
         </div>
-        <div class="li-cal">${e.calories}</div>
+        <div class="li-cal">${fmtNum(e.calories)}</div>
         <button class="del-btn" onclick="deleteEntry('${e.id}')">✕</button>
       </div>`).join('');
   const totalRowHtml = entries.length===0 ? '' : `
       <div class="log-total">
         <span>總計</span>
-        <span class="log-total-macros">蛋白質 ${t.protein}g・碳水 ${t.carbs}g・脂肪 ${t.fat}g</span>
-        <span class="log-total-cal">${t.calories} 大卡</span>
+        <span class="log-total-macros">蛋白質 ${fmtNum(t.protein)}g・碳水 ${fmtNum(t.carbs)}g・脂肪 ${fmtNum(t.fat)}g</span>
+        <span class="log-total-cal">${fmtNum(t.calories)} 大卡</span>
       </div>`;
   listEl.innerHTML = entries.length===0 ? '<div class="empty">今天還沒有紀錄，往上新增食物開始吧！</div>' : itemsHtml + totalRowHtml;
   const burned = await renderExerciseList();
-  document.getElementById('sumCal').textContent = `${t.calories} / ${targets.calories}`;
-  document.getElementById('sumProtein').textContent = `${t.protein}/${targets.protein}g`;
-  document.getElementById('sumCarbs').textContent = `${t.carbs}/${targets.carbs}g`;
-  document.getElementById('sumFat').textContent = `${t.fat}/${targets.fat}g`;
+  document.getElementById('sumCal').textContent = `${fmtNum(t.calories)} / ${fmtNum(targets.calories)}`;
+  document.getElementById('sumProtein').textContent = `${fmtNum(t.protein)}/${fmtNum(targets.protein)}g`;
+  document.getElementById('sumCarbs').textContent = `${fmtNum(t.carbs)}/${fmtNum(targets.carbs)}g`;
+  document.getElementById('sumFat').textContent = `${fmtNum(t.fat)}/${fmtNum(targets.fat)}g`;
   document.getElementById('barCal').style.width = Math.min(100, targets.calories? t.calories/targets.calories*100:0)+'%';
   document.getElementById('barProtein').style.width = Math.min(100, targets.protein? t.protein/targets.protein*100:0)+'%';
   document.getElementById('barCarbs').style.width = Math.min(100, targets.carbs? t.carbs/targets.carbs*100:0)+'%';
@@ -812,11 +824,11 @@ async function renderDietLog(){
   const totalBurn = targets.bmr + burned;
   const deficit = totalBurn - t.calories;
   document.getElementById('calorieSummary').innerHTML = `
-    <div class="calorie-row"><span>攝取熱量</span><span class="cr-val">${t.calories} 大卡</span></div>
-    <div class="calorie-row"><span>基礎代謝 (BMR)</span><span class="cr-val">${targets.bmr} 大卡</span></div>
-    <div class="calorie-row"><span>運動消耗</span><span class="cr-val">${burned} 大卡</span></div>
-    <div class="calorie-row"><span>總消耗（BMR＋運動）</span><span class="cr-val">${totalBurn} 大卡</span></div>
-    <div class="calorie-row deficit"><span>熱量赤字</span><span class="cr-val ${deficit>=0?'pos':'neg'}">${deficit>=0?'+':''}${deficit} 大卡${deficit>=0?'（赤字）':'（盈餘）'}</span></div>`;
+    <div class="calorie-row"><span>攝取熱量</span><span class="cr-val">${fmtNum(t.calories)} 大卡</span></div>
+    <div class="calorie-row"><span>基礎代謝 (BMR)</span><span class="cr-val">${fmtNum(targets.bmr)} 大卡</span></div>
+    <div class="calorie-row"><span>運動消耗</span><span class="cr-val">${fmtNum(burned)} 大卡</span></div>
+    <div class="calorie-row"><span>總消耗（BMR＋運動）</span><span class="cr-val">${fmtNum(totalBurn)} 大卡</span></div>
+    <div class="calorie-row deficit"><span>熱量赤字</span><span class="cr-val ${deficit>=0?'pos':'neg'}">${deficit>=0?'+':''}${fmtNum(deficit)} 大卡${deficit>=0?'（赤字）':'（盈餘）'}</span></div>`;
 
   renderWeeklyChart();
 }
@@ -919,7 +931,7 @@ async function renderBodyTab(){
       <div class="log-item">
         <div class="li-left">
           <div class="li-name">${e.date}${e.note?`<span class="li-tag">${escapeHtml(e.note)}</span>`:''}</div>
-          <div class="li-macros">${e.weight!=null?`體重 ${e.weight}kg・`:''}${e.bodyFat!=null?`體脂 ${e.bodyFat}%・`:''}${e.muscleMass!=null?`肌肉 ${e.muscleMass}kg`:''}</div>
+          <div class="li-macros">${e.weight!=null?`體重 ${fmtNum(e.weight)}kg・`:''}${e.bodyFat!=null?`體脂 ${fmtNum(e.bodyFat)}%・`:''}${e.muscleMass!=null?`肌肉 ${fmtNum(e.muscleMass)}kg`:''}</div>
         </div>
         <button class="del-btn" onclick="deleteBodyEntry('${e.id}')">✕</button>
       </div>`).join('');
@@ -927,7 +939,7 @@ async function renderBodyTab(){
   renderWeightChart(entries.filter(e=>e.weight!=null || e.muscleMass!=null));
 
   const selA = document.getElementById('compareA'), selB = document.getElementById('compareB');
-  const opts = entries.map(e=>`<option value="${e.id}">${e.date}${e.weight?' ・ '+e.weight+'kg':''}</option>`).join('');
+  const opts = entries.map(e=>`<option value="${e.id}">${e.date}${e.weight?' ・ '+fmtNum(e.weight)+'kg':''}</option>`).join('');
   selA.innerHTML = opts; selB.innerHTML = opts;
   if(entries.length>0){ selA.value = entries[0].id; selB.value = entries[entries.length-1].id; }
   renderCompare();
@@ -1005,7 +1017,7 @@ async function exportExcel(){
       if(!r) continue;
       const date = k.replace('entries:','');
       JSON.parse(r.value).forEach(e=>{
-        dietRows.push({日期:date,時間:e.time,品項:e.name,份量:e.portion||'',標籤:e.tag||'',熱量:e.calories,蛋白質:e.protein,碳水:e.carbs,脂肪:e.fat});
+        dietRows.push({日期:date,時間:e.time,品項:e.name,份量:e.portion||'',標籤:e.tag||'',熱量:round1(e.calories),蛋白質:round1(e.protein),碳水:round1(e.carbs),脂肪:round1(e.fat)});
       });
     }
   }
@@ -1019,7 +1031,7 @@ async function exportExcel(){
       if(!r) continue;
       const date = k.replace('exercise:','');
       JSON.parse(r.value).forEach(e=>{
-        exerciseRows.push({日期:date,時間:e.time,運動類型:e.name,時間_分鐘:e.duration,體重:e.weight,消耗熱量:e.calories});
+        exerciseRows.push({日期:date,時間:e.time,運動類型:e.name,時間_分鐘:e.duration,體重:e.weight,消耗熱量:round1(e.calories)});
       });
     }
   }
