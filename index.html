@@ -327,10 +327,10 @@
         <div class="field"><label>時間 (分鐘)</label><input type="number" id="ex-duration" placeholder="30"></div>
         <div class="field"><label>體重 (kg)</label><input type="number" id="ex-weight" step="0.1" placeholder="從塑身紀錄帶入"></div>
       </div>
-      <div class="note-field"><label>手動調整消耗熱量（選填，填了就用這個數字，不用公式計算）</label><input type="number" id="ex-manual-cal" placeholder="大卡"></div>
-      <button class="add-btn" onclick="addExercise()">計算並加入運動紀錄</button>
-      <div class="note">＊ 未手動調整時，以 MET 公式估算：消耗大卡 = MET × 體重(kg) × 時間(小時)，實際消耗因人而異，僅供參考。</div>
+      <button class="add-btn" onclick="estimateExercise()">估算消耗熱量</button>
+      <div class="note">＊ 以 MET 公式估算：消耗大卡 = MET × 體重(kg) × 時間(小時)，估算後可再手動調整，實際消耗因人而異，僅供參考。</div>
     </div>
+    <div id="exercisePreview"></div>
 
     <div class="exercise-form" style="margin-top:12px;">
       <div class="fav-label" style="margin-bottom:8px;">或直接新增運動與消耗熱量</div>
@@ -351,6 +351,7 @@
   <!-- BODY TAB -->
   <div class="tab-panel" id="tab-body">
     <div class="settings-card">
+      <div class="fav-label" id="bodyLatest" style="margin-bottom:8px;text-transform:none;letter-spacing:0;">還沒有任何紀錄</div>
       <div class="field-grid">
         <div class="field"><label>體重 (kg)</label><input type="number" id="bf-weight" step="0.1" placeholder="選填"></div>
         <div class="field"><label>體脂率 (%)</label><input type="number" id="bf-bodyfat" step="0.1" placeholder="選填"></div>
@@ -358,6 +359,7 @@
       </div>
       <div class="note-field"><label>備註（聚餐／生理期／訓練日…）</label><input type="text" id="bf-note" placeholder="選填"></div>
       <button class="add-btn" id="addBodyBtn" onclick="addBodyEntry()">加入今日紀錄</button>
+      <div class="note">＊ 沒有新量測數據就不用填，空著的欄位會自動沿用最近一次的數值。</div>
     </div>
 
     <div class="section-title">時間軸</div>
@@ -756,35 +758,43 @@ async function deleteEntry(id){
 async function getExerciseEntries(){
   try{const r=await storage.get(EXERCISE_KEY_FN()); return r?JSON.parse(r.value):[];}catch(e){return [];}
 }
-async function addExercise(){
+async function estimateExercise(){
   const sel = document.getElementById('ex-type');
   const met = Number(sel.selectedOptions[0].dataset.met);
   const duration = Number(document.getElementById('ex-duration').value)||0;
-  const manualCalRaw = document.getElementById('ex-manual-cal').value;
   let weight = Number(document.getElementById('ex-weight').value)||0;
   if(!weight){
     const bodyEntries = await getBodyEntries();
     const withWeight = bodyEntries.filter(e=>e.weight!=null);
     if(withWeight.length>0) weight = withWeight[withWeight.length-1].weight;
   }
-  let calories;
-  if(manualCalRaw !== ''){
-    calories = Math.round(Number(manualCalRaw))||0;
-    if(!calories){ alert('請輸入有效的手動消耗熱量'); return; }
-  }else{
-    if(!duration || !weight){
-      alert('請輸入運動時間，並確認體重（可先到「inbody」分頁記錄一次體重），或改用下方手動調整消耗熱量');
-      return;
-    }
-    calories = Math.round(met * weight * (duration/60));
+  if(!duration || !weight){
+    alert('請輸入運動時間，並確認體重（可先到「inbody」分頁記錄一次體重）');
+    return;
   }
+  const calories = Math.round(met * weight * (duration/60));
+  document.getElementById('exercisePreview').innerHTML = `
+    <div class="item-card">
+      <div class="item-head"><input id="exp-name" value="${escapeHtml(sel.value)}"></div>
+      <div class="item-amount">${duration} 分鐘・${weight}kg（估算值，可調整下方熱量）</div>
+      <div class="item-macros">
+        <div class="im cal" style="flex:0 0 100%;"><div class="im-label">消耗大卡</div><input id="exp-cal" type="number" value="${calories}"></div>
+      </div>
+      <button class="add-btn" onclick="confirmExerciseAdd(${duration}, ${weight})">加入運動紀錄</button>
+      <button class="cancel-btn" onclick="document.getElementById('exercisePreview').innerHTML=''">取消</button>
+    </div>`;
+}
+async function confirmExerciseAdd(duration, weight){
+  const name = document.getElementById('exp-name').value || '運動';
+  const calories = Math.round(Number(document.getElementById('exp-cal').value))||0;
+  if(!calories){ alert('請輸入有效的消耗熱量'); return; }
   try{
     const entries = await getExerciseEntries();
-    entries.push({id:Date.now().toString(),time:new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}),name:sel.value,duration:duration||null,weight:weight||null,calories});
+    entries.push({id:Date.now().toString(),time:new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}),name,duration:duration||null,weight:weight||null,calories});
     await storage.set(EXERCISE_KEY_FN(), JSON.stringify(entries));
   }catch(err){ showStorageError(err); return; }
   document.getElementById('ex-duration').value='';
-  document.getElementById('ex-manual-cal').value='';
+  document.getElementById('exercisePreview').innerHTML='';
   renderDietLog();
 }
 async function getExerciseFavorites(){
@@ -969,16 +979,21 @@ async function getBodyEntries(){
   try{const r=await storage.get('body-entries'); return r?JSON.parse(r.value):[];}catch(e){return [];}
 }
 async function addBodyEntry(){
-  const weight = document.getElementById('bf-weight').value ? Number(document.getElementById('bf-weight').value) : null;
-  const bodyFat = document.getElementById('bf-bodyfat').value ? Number(document.getElementById('bf-bodyfat').value) : null;
-  const muscleMass = document.getElementById('bf-muscle').value ? Number(document.getElementById('bf-muscle').value) : null;
-  if(weight==null && bodyFat==null && muscleMass==null){
-    alert('請至少填一項數值（體重／體脂率／肌肉量）');
+  const weightRaw = document.getElementById('bf-weight').value;
+  const bodyFatRaw = document.getElementById('bf-bodyfat').value;
+  const muscleRaw = document.getElementById('bf-muscle').value;
+  if(!weightRaw && !bodyFatRaw && !muscleRaw){
+    alert('請至少填一項數值（體重／體脂率／肌肉量），沒有新數據的話不用每天都填');
     return;
   }
   const date = currentDate;
   try{
     const entries = await getBodyEntries();
+    const latest = entries.length ? entries[entries.length-1] : null;
+    // 沒填的欄位就沿用最近一次的數值，不用每次都整套重填
+    const weight = weightRaw ? Number(weightRaw) : (latest ? latest.weight : null);
+    const bodyFat = bodyFatRaw ? Number(bodyFatRaw) : (latest ? latest.bodyFat : null);
+    const muscleMass = muscleRaw ? Number(muscleRaw) : (latest ? latest.muscleMass : null);
     const existingIdx = entries.findIndex(e=>e.date===date);
     const entry = {
       id: existingIdx>-1 ? entries[existingIdx].id : Date.now().toString(),
@@ -1007,6 +1022,16 @@ async function deleteBodyEntry(id){
 
 async function renderBodyTab(){
   const entries = await getBodyEntries();
+  const latest = entries.length ? entries[entries.length-1] : null;
+  const latestBox = document.getElementById('bodyLatest');
+  if(latest){
+    latestBox.innerHTML = `最新記錄（${latest.date}）：${latest.weight!=null?fmtNum(latest.weight)+'kg・':''}${latest.bodyFat!=null?fmtNum(latest.bodyFat)+'%・':''}${latest.muscleMass!=null?fmtNum(latest.muscleMass)+'kg':''}`;
+    document.getElementById('bf-weight').placeholder = latest.weight!=null ? `目前 ${fmtNum(latest.weight)}` : '選填';
+    document.getElementById('bf-bodyfat').placeholder = latest.bodyFat!=null ? `目前 ${fmtNum(latest.bodyFat)}` : '選填';
+    document.getElementById('bf-muscle').placeholder = latest.muscleMass!=null ? `目前 ${fmtNum(latest.muscleMass)}` : '選填';
+  }else{
+    latestBox.innerHTML = '還沒有任何紀錄';
+  }
   const tl = document.getElementById('bodyTimeline');
   tl.innerHTML = entries.length===0 ? '<div class="empty">還沒有紀錄</div>' :
     entries.slice().reverse().map(e=>`
