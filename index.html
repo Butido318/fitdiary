@@ -327,9 +327,21 @@
         <div class="field"><label>時間 (分鐘)</label><input type="number" id="ex-duration" placeholder="30"></div>
         <div class="field"><label>體重 (kg)</label><input type="number" id="ex-weight" step="0.1" placeholder="從塑身紀錄帶入"></div>
       </div>
+      <div class="note-field"><label>手動調整消耗熱量（選填，填了就用這個數字，不用公式計算）</label><input type="number" id="ex-manual-cal" placeholder="大卡"></div>
       <button class="add-btn" onclick="addExercise()">計算並加入運動紀錄</button>
-      <div class="note">＊ 以 MET 公式估算：消耗大卡 = MET × 體重(kg) × 時間(小時)，實際消耗因人而異，僅供參考。</div>
+      <div class="note">＊ 未手動調整時，以 MET 公式估算：消耗大卡 = MET × 體重(kg) × 時間(小時)，實際消耗因人而異，僅供參考。</div>
     </div>
+
+    <div class="exercise-form" style="margin-top:12px;">
+      <div class="fav-label" style="margin-bottom:8px;">或直接新增運動與消耗熱量</div>
+      <div class="field-grid" style="grid-template-columns:2fr 1fr;">
+        <div class="field"><label>運動名稱</label><input type="text" id="ex-custom-name" placeholder="例如：飛輪、跳繩"></div>
+        <div class="field"><label>消耗熱量</label><input type="number" id="ex-custom-cal" placeholder="大卡"></div>
+      </div>
+      <label class="fav-check"><input type="checkbox" id="ex-custom-savefav"> 加入常用運動</label>
+      <button class="add-btn" onclick="addCustomExercise()">加入紀錄</button>
+    </div>
+    <div id="exerciseFavArea"></div>
     <div id="exerciseList" style="margin-top:10px;"></div>
 
     <div class="section-title">本週熱量趨勢</div>
@@ -748,23 +760,87 @@ async function addExercise(){
   const sel = document.getElementById('ex-type');
   const met = Number(sel.selectedOptions[0].dataset.met);
   const duration = Number(document.getElementById('ex-duration').value)||0;
+  const manualCalRaw = document.getElementById('ex-manual-cal').value;
   let weight = Number(document.getElementById('ex-weight').value)||0;
   if(!weight){
     const bodyEntries = await getBodyEntries();
     const withWeight = bodyEntries.filter(e=>e.weight!=null);
     if(withWeight.length>0) weight = withWeight[withWeight.length-1].weight;
   }
-  if(!duration || !weight){
-    alert('請輸入運動時間，並確認體重（可先到「inbody」分頁記錄一次體重）');
-    return;
+  let calories;
+  if(manualCalRaw !== ''){
+    calories = Math.round(Number(manualCalRaw))||0;
+    if(!calories){ alert('請輸入有效的手動消耗熱量'); return; }
+  }else{
+    if(!duration || !weight){
+      alert('請輸入運動時間，並確認體重（可先到「inbody」分頁記錄一次體重），或改用下方手動調整消耗熱量');
+      return;
+    }
+    calories = Math.round(met * weight * (duration/60));
   }
-  const calories = Math.round(met * weight * (duration/60));
   try{
     const entries = await getExerciseEntries();
-    entries.push({id:Date.now().toString(),time:new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}),name:sel.value,duration,weight,calories});
+    entries.push({id:Date.now().toString(),time:new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}),name:sel.value,duration:duration||null,weight:weight||null,calories});
     await storage.set(EXERCISE_KEY_FN(), JSON.stringify(entries));
   }catch(err){ showStorageError(err); return; }
   document.getElementById('ex-duration').value='';
+  document.getElementById('ex-manual-cal').value='';
+  renderDietLog();
+}
+async function getExerciseFavorites(){
+  try{const r=await storage.get('exercise-favorites'); return r?JSON.parse(r.value):[];}catch(e){return [];}
+}
+async function renderExerciseFavorites(){
+  const favs = await getExerciseFavorites();
+  const area = document.getElementById('exerciseFavArea');
+  if(favs.length===0){area.innerHTML='';return;}
+  area.innerHTML = `<div class="fav-label" style="margin-top:12px;">常用運動</div><div class="fav-row">${
+    favs.map(f=>`<div class="fav-chip">
+        <span onclick="quickAddExerciseFav('${f.id}')">${escapeHtml(f.name)}・${fmtNum(f.calories)}大卡</span>
+        <button class="fav-del" onclick="event.stopPropagation();deleteExerciseFavorite('${f.id}')">✕</button>
+      </div>`).join('')
+  }</div>`;
+}
+async function deleteExerciseFavorite(id){
+  try{
+    const favs = await getExerciseFavorites();
+    await storage.set('exercise-favorites', JSON.stringify(favs.filter(f=>f.id!==id)));
+  }catch(err){ showStorageError(err); return; }
+  renderExerciseFavorites();
+}
+async function quickAddExerciseFav(id){
+  const favs = await getExerciseFavorites();
+  const f = favs.find(x=>x.id===id);
+  if(!f) return;
+  try{
+    const entries = await getExerciseEntries();
+    entries.push({id:Date.now().toString(),time:new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}),name:f.name,duration:null,weight:null,calories:f.calories});
+    await storage.set(EXERCISE_KEY_FN(), JSON.stringify(entries));
+  }catch(err){ showStorageError(err); return; }
+  renderDietLog();
+}
+async function addCustomExercise(){
+  const name = document.getElementById('ex-custom-name').value.trim();
+  const cal = Math.round(Number(document.getElementById('ex-custom-cal').value))||0;
+  if(!name || !cal){
+    alert('請填運動名稱與消耗熱量');
+    return;
+  }
+  const saveFav = document.getElementById('ex-custom-savefav').checked;
+  try{
+    if(saveFav){
+      const favs = await getExerciseFavorites();
+      favs.push({id:Date.now().toString()+'f', name, calories:cal});
+      await storage.set('exercise-favorites', JSON.stringify(favs));
+      renderExerciseFavorites();
+    }
+    const entries = await getExerciseEntries();
+    entries.push({id:Date.now().toString(),time:new Date().toLocaleTimeString('zh-TW',{hour:'2-digit',minute:'2-digit'}),name,duration:null,weight:null,calories:cal});
+    await storage.set(EXERCISE_KEY_FN(), JSON.stringify(entries));
+  }catch(err){ showStorageError(err); return; }
+  document.getElementById('ex-custom-name').value='';
+  document.getElementById('ex-custom-cal').value='';
+  document.getElementById('ex-custom-savefav').checked=false;
   renderDietLog();
 }
 async function deleteExercise(id){
@@ -777,15 +853,21 @@ async function deleteExercise(id){
 async function renderExerciseList(){
   const entries = await getExerciseEntries();
   const el = document.getElementById('exerciseList');
-  el.innerHTML = entries.length===0 ? '' : entries.map(e=>`
+  el.innerHTML = entries.length===0 ? '' : entries.map(e=>{
+    const subParts = [];
+    if(e.duration!=null) subParts.push(`${e.duration} 分鐘`);
+    if(e.weight!=null) subParts.push(`${e.weight}kg`);
+    const sub = subParts.length ? subParts.join('・') : '手動輸入';
+    return `
     <div class="exercise-item">
       <div class="li-left">
         <div class="ei-name">${escapeHtml(e.name)}</div>
-        <div class="ei-sub">${e.time}｜${e.duration} 分鐘・${e.weight}kg</div>
+        <div class="ei-sub">${e.time}｜${sub}</div>
       </div>
       <div class="ei-cal">-${fmtNum(e.calories)}</div>
       <button class="del-btn" onclick="deleteExercise('${e.id}')">✕</button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
   return entries.reduce((a,e)=>a+e.calories,0);
 }
 async function getEntries(){
@@ -822,13 +904,13 @@ async function renderDietLog(){
   document.getElementById('barFat').style.width = Math.min(100, targets.fat? t.fat/targets.fat*100:0)+'%';
 
   const totalBurn = targets.bmr + burned;
-  const deficit = totalBurn - t.calories;
+  const deficit = t.calories - totalBurn;
   document.getElementById('calorieSummary').innerHTML = `
     <div class="calorie-row"><span>攝取熱量</span><span class="cr-val">${fmtNum(t.calories)} 大卡</span></div>
     <div class="calorie-row"><span>基礎代謝 (BMR)</span><span class="cr-val">${fmtNum(targets.bmr)} 大卡</span></div>
     <div class="calorie-row"><span>運動消耗</span><span class="cr-val">${fmtNum(burned)} 大卡</span></div>
     <div class="calorie-row"><span>總消耗（BMR＋運動）</span><span class="cr-val">${fmtNum(totalBurn)} 大卡</span></div>
-    <div class="calorie-row deficit"><span>熱量赤字</span><span class="cr-val ${deficit>=0?'pos':'neg'}">${deficit>=0?'+':''}${fmtNum(deficit)} 大卡${deficit>=0?'（赤字）':'（盈餘）'}</span></div>`;
+    <div class="calorie-row deficit"><span>熱量赤字</span><span class="cr-val ${deficit<=0?'pos':'neg'}">${deficit>0?'+':''}${fmtNum(deficit)} 大卡${deficit<=0?'（赤字）':'（盈餘）'}</span></div>`;
 
   renderWeeklyChart();
 }
@@ -854,7 +936,7 @@ async function renderWeeklyChart(){
       if(r) burn = JSON.parse(r.value).reduce((a,e)=>a+e.calories,0);
     }catch(e){}
     const totalBurn = targets.bmr + burn;
-    data.push({date, intake, burn: totalBurn, deficit: totalBurn - intake});
+    data.push({date, intake, burn: totalBurn, deficit: intake - totalBurn});
   }
   const w=300,h=150,pad=28;
   const allVals = data.flatMap(d=>[d.intake,d.burn,d.deficit]);
@@ -1052,6 +1134,7 @@ async function exportExcel(){
   ensureFoodRows();
   await loadTargets();
   await renderFavorites();
+  await renderExerciseFavorites();
   await renderDietLog();
   await renderBodyTab();
 })();
