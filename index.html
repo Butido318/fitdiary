@@ -500,7 +500,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
 });
 
 /* ---------- targets ---------- */
-let targets = {calories:1200,protein:100,carbs:120,fat:50,bmr:1300};
+let targets = {calories:2000,protein:100,carbs:250,fat:65,bmr:1300};
 async function loadTargets(){
   try{
     const r = await storage.get('targets');
@@ -863,6 +863,7 @@ async function deleteExercise(id){
 }
 async function renderExerciseList(){
   const entries = await getExerciseEntries();
+  window.__lastExerciseCount = entries.length;
   const el = document.getElementById('exerciseList');
   el.innerHTML = entries.length===0 ? '' : entries.map(e=>{
     const subParts = [];
@@ -905,7 +906,7 @@ async function renderDietLog(){
       </div>`;
   listEl.innerHTML = entries.length===0 ? '<div class="empty">今天還沒有紀錄，往上新增食物開始吧！</div>' : itemsHtml + totalRowHtml;
   const burned = await renderExerciseList();
-  const exerciseCount = (await getExerciseEntries()).length;
+  const exerciseCount = window.__lastExerciseCount || 0;
   const dsEl = document.getElementById('dateSummary');
   if(entries.length===0 && exerciseCount===0){
     dsEl.textContent = '這天還沒有任何紀錄';
@@ -942,32 +943,34 @@ async function renderWeeklyChart(){
     d.setDate(d.getDate()-i);
     days.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`);
   }
-  const data = [];
-  for(const date of days){
+  // 一次平行送出所有請求，不要一個一個排隊等，會快很多
+  const fetches = days.map(date => Promise.all([
+    storage.get(`entries:${date}`).catch(()=>null),
+    storage.get(`exercise:${date}`).catch(()=>null)
+  ]));
+  const results = await Promise.all(fetches);
+  const data = days.map((date, i) => {
+    const [entryRes, exRes] = results[i];
     let intake = 0, burn = 0;
-    try{
-      const r = await storage.get(`entries:${date}`);
-      if(r) intake = JSON.parse(r.value).reduce((a,e)=>a+e.calories,0);
-    }catch(e){}
-    try{
-      const r = await storage.get(`exercise:${date}`);
-      if(r) burn = JSON.parse(r.value).reduce((a,e)=>a+e.calories,0);
-    }catch(e){}
+    try{ if(entryRes) intake = JSON.parse(entryRes.value).reduce((a,e)=>a+e.calories,0); }catch(e){}
+    try{ if(exRes) burn = JSON.parse(exRes.value).reduce((a,e)=>a+e.calories,0); }catch(e){}
     const totalBurn = targets.bmr + burn;
-    data.push({date, intake, burn: totalBurn, deficit: intake - totalBurn});
-  }
-  const w=300,h=150,pad=28;
+    return {date, intake, burn: totalBurn, deficit: intake - totalBurn};
+  });
+  const w=300,h=150,pad=30;
   const allVals = data.flatMap(d=>[d.intake,d.burn,d.deficit]);
   const min = Math.min(0,...allVals), max = Math.max(...allVals,1);
   const range = (max-min)||1;
   const stepX = (w-pad*2)/(data.length-1);
+  function yOf(v){ return pad + (1-(v-min)/range)*(h-pad*2); }
   function lineFor(key,color){
-    const coords = data.map((d,i)=>[pad+i*stepX, pad + (1-(d[key]-min)/range)*(h-pad*2)]);
+    const coords = data.map((d,i)=>[pad+i*stepX, yOf(d[key])]);
     const path = coords.map((c,i)=>(i===0?'M':'L')+c[0].toFixed(1)+','+c[1].toFixed(1)).join(' ');
     const dots = coords.map(c=>`<circle cx="${c[0]}" cy="${c[1]}" r="2.5" fill="${color}"/>`).join('');
     return `<path d="${path}" fill="none" stroke="${color}" stroke-width="2"/>${dots}`;
   }
-  const zeroY = pad + (1-(0-min)/range)*(h-pad*2);
+  const zeroY = yOf(0);
+  const maxY = yOf(max), minY = yOf(min);
   const labels = data.map((d,i)=>`<text x="${pad+i*stepX}" y="${h-4}" font-size="7" fill="#6b6b63" text-anchor="middle">${d.date.slice(8)}</text>`).join('');
   box.innerHTML = `
     <div class="chart-legend">
@@ -981,6 +984,9 @@ async function renderWeeklyChart(){
       ${lineFor('burn','#3d5a80')}
       ${lineFor('deficit','#2f6f4e')}
       ${labels}
+      <text x="2" y="${maxY+3}" font-size="8" font-weight="700" fill="#1a1a1a">${fmtNum(max)}</text>
+      <text x="2" y="${minY+3}" font-size="8" font-weight="700" fill="#1a1a1a">${fmtNum(min)}</text>
+      <text x="2" y="${zeroY+3}" font-size="8" fill="#6b6b63">0</text>
     </svg>`;
 }
 async function getBodyEntries(){
@@ -1166,10 +1172,12 @@ async function exportExcel(){
 (async function init(){
   ensureFoodRows();
   await loadTargets();
-  await renderFavorites();
-  await renderExerciseFavorites();
-  await renderDietLog();
-  await renderBodyTab();
+  await Promise.all([
+    renderFavorites(),
+    renderExerciseFavorites(),
+    renderBodyTab(),
+    renderDietLog()
+  ]);
 })();
 
 </script>
