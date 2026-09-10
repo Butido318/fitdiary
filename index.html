@@ -408,12 +408,18 @@ const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwn_JGRmJUFiqqe
 
 /* ---------- storage adapter（透過 Apps Script 讀寫 Google 試算表） ---------- */
 const storage = {
-  async get(key){
+  async get(key, _retried){
     try{
       const res = await fetch(`${APPS_SCRIPT_URL}?action=get&key=${encodeURIComponent(key)}`);
       const data = await res.json();
       return (data && data.value!=null) ? {key, value:data.value} : null;
-    }catch(e){ console.error('storage.get failed', e); return null; }
+    }catch(e){
+      if(!_retried){
+        await new Promise(r=>setTimeout(r,400));
+        return storage.get(key, true);
+      }
+      console.error('storage.get failed', e); return null;
+    }
   },
   async set(key, value){
     const res = await fetch(APPS_SCRIPT_URL, {
@@ -764,10 +770,9 @@ async function estimateExercise(){
   const met = Number(sel.selectedOptions[0].dataset.met);
   const duration = Number(document.getElementById('ex-duration').value)||0;
   let weight = Number(document.getElementById('ex-weight').value)||0;
-  if(!weight){
-    const bodyEntries = await getBodyEntries();
-    const withWeight = bodyEntries.filter(e=>e.weight!=null);
-    if(withWeight.length>0) weight = withWeight[withWeight.length-1].weight;
+  if(!weight && window.__latestBodyWeight!=null){
+    weight = window.__latestBodyWeight;
+    document.getElementById('ex-weight').value = weight;
   }
   if(!duration || !weight){
     alert('請輸入運動時間，並確認體重（可先到「inbody」分頁記錄一次體重）');
@@ -1038,6 +1043,13 @@ async function renderBodyTab(){
   const entries = await getBodyEntries();
   const latest = entries.length ? entries[entries.length-1] : null;
   const latestBox = document.getElementById('bodyLatest');
+  // 找最近一筆有體重的紀錄，直接帶進運動分頁的體重欄位，不用每次估算運動時額外查一次
+  const latestWithWeight = entries.slice().reverse().find(e=>e.weight!=null);
+  window.__latestBodyWeight = latestWithWeight ? latestWithWeight.weight : null;
+  const exWeightInput = document.getElementById('ex-weight');
+  if(exWeightInput && !exWeightInput.value && window.__latestBodyWeight!=null){
+    exWeightInput.value = window.__latestBodyWeight;
+  }
   if(latest){
     latestBox.innerHTML = `最新記錄（${latest.date}）：${latest.weight!=null?fmtNum(latest.weight)+'kg・':''}${latest.bodyFat!=null?fmtNum(latest.bodyFat)+'%・':''}${latest.muscleMass!=null?fmtNum(latest.muscleMass)+'kg':''}`;
     document.getElementById('bf-weight').placeholder = latest.weight!=null ? `目前 ${fmtNum(latest.weight)}` : '選填';
@@ -1175,9 +1187,9 @@ async function exportExcel(){
   await Promise.all([
     renderFavorites(),
     renderExerciseFavorites(),
-    renderBodyTab(),
-    renderDietLog()
+    renderBodyTab()
   ]);
+  await renderDietLog();
 })();
 
 </script>
