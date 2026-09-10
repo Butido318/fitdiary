@@ -500,7 +500,7 @@ document.querySelectorAll('.tab-btn').forEach(btn=>{
 });
 
 /* ---------- targets ---------- */
-let targets = {calories:2000,protein:100,carbs:250,fat:65,bmr:1300};
+let targets = {calories:1200,protein:100,carbs:120,fat:50,bmr:1300};
 async function loadTargets(){
   try{
     const r = await storage.get('targets');
