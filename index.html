@@ -241,6 +241,7 @@
       <input type="date" id="dateInput">
       <button class="today-btn" id="todayBtn" onclick="setToToday()">回到今天</button>
     </div>
+    <div class="date" id="dateSummary" style="margin-top:6px;"></div>
   </header>
 
   <div class="tabbar">
@@ -904,6 +905,13 @@ async function renderDietLog(){
       </div>`;
   listEl.innerHTML = entries.length===0 ? '<div class="empty">今天還沒有紀錄，往上新增食物開始吧！</div>' : itemsHtml + totalRowHtml;
   const burned = await renderExerciseList();
+  const exerciseCount = (await getExerciseEntries()).length;
+  const dsEl = document.getElementById('dateSummary');
+  if(entries.length===0 && exerciseCount===0){
+    dsEl.textContent = '這天還沒有任何紀錄';
+  }else{
+    dsEl.textContent = `這天已有 ${entries.length} 筆飲食紀錄・${exerciseCount} 筆運動紀錄（合計 ${fmtNum(t.calories)} 大卡）`;
+  }
   document.getElementById('sumCal').textContent = `${fmtNum(t.calories)} / ${fmtNum(targets.calories)}`;
   document.getElementById('sumProtein').textContent = `${fmtNum(t.protein)}/${fmtNum(targets.protein)}g`;
   document.getElementById('sumCarbs').textContent = `${fmtNum(t.carbs)}/${fmtNum(targets.carbs)}g`;
