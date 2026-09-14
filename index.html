@@ -567,6 +567,10 @@ async function deleteFavorite(id){
   renderFavorites();
 }
 async function quickAddFav(id){
+  if(document.getElementById('resultCard').innerHTML.trim()){
+    alert('目前還有一份 AI 估算結果尚未確認加入，請先按「加入今日紀錄」或「取消」，再新增常用食物，避免弄丟剛剛估算的內容。');
+    return;
+  }
   const favs = await getFavorites();
   const f = favs.find(x=>x.id===id);
   if(!f) return;
@@ -831,6 +835,10 @@ async function deleteExerciseFavorite(id){
   renderExerciseFavorites();
 }
 async function quickAddExerciseFav(id){
+  if(document.getElementById('exercisePreview').innerHTML.trim()){
+    alert('目前還有一份運動估算結果尚未確認加入，請先按「加入運動紀錄」或「取消」，再新增常用運動。');
+    return;
+  }
   const favs = await getExerciseFavorites();
   const f = favs.find(x=>x.id===id);
   if(!f) return;
@@ -967,17 +975,18 @@ async function renderWeeklyChart(){
     const totalBurn = targets.bmr + burn;
     return {date, intake, burn: totalBurn, deficit: intake - totalBurn};
   });
-  const w=300,h=150,pad=30;
+  const w=300,h=175,pad=30;
   const allVals = data.flatMap(d=>[d.intake,d.burn,d.deficit]);
   const min = Math.min(0,...allVals), max = Math.max(...allVals,1);
   const range = (max-min)||1;
   const stepX = (w-pad*2)/(data.length-1);
-  function yOf(v){ return pad + (1-(v-min)/range)*(h-pad*2); }
+  function yOf(v){ return pad + (1-(v-min)/range)*(h-pad*2-14); }
   function lineFor(key,color){
     const coords = data.map((d,i)=>[pad+i*stepX, yOf(d[key])]);
     const path = coords.map((c,i)=>(i===0?'M':'L')+c[0].toFixed(1)+','+c[1].toFixed(1)).join(' ');
     const dots = coords.map(c=>`<circle cx="${c[0]}" cy="${c[1]}" r="2.5" fill="${color}"/>`).join('');
-    return `<path d="${path}" fill="none" stroke="${color}" stroke-width="2"/>${dots}`;
+    const valLabels = data.map((d,i)=>`<text x="${coords[i][0]}" y="${coords[i][1]-5}" font-size="6.5" font-weight="700" fill="${color}" text-anchor="middle">${fmtNum(d[key])}</text>`).join('');
+    return `<path d="${path}" fill="none" stroke="${color}" stroke-width="2"/>${dots}${valLabels}`;
   }
   const zeroY = yOf(0);
   const maxY = yOf(max), minY = yOf(min);
@@ -994,8 +1003,6 @@ async function renderWeeklyChart(){
       ${lineFor('burn','#3d5a80')}
       ${lineFor('deficit','#2f6f4e')}
       ${labels}
-      <text x="2" y="${maxY+3}" font-size="8" font-weight="700" fill="#1a1a1a">${fmtNum(max)}</text>
-      <text x="2" y="${minY+3}" font-size="8" font-weight="700" fill="#1a1a1a">${fmtNum(min)}</text>
       <text x="2" y="${zeroY+3}" font-size="8" fill="#6b6b63">0</text>
     </svg>`;
 }
@@ -1083,15 +1090,20 @@ async function renderBodyTab(){
   renderCompare();
 }
 
-function buildLine(pts, key, w, h, pad, min, max){
-  const range = (max-min)||1;
+function buildIndependentLine(pts, key, w, h, pad, color){
   const valid = pts.map((p,i)=>({i,v:p[key]})).filter(x=>x.v!=null);
-  if(valid.length<2) return null;
+  if(valid.length<2) return '';
+  const vmin = Math.min(...valid.map(x=>x.v)), vmax = Math.max(...valid.map(x=>x.v));
+  const range = (vmax-vmin)||1;
   const stepX = (w-pad*2)/(pts.length-1 || 1);
-  const coords = valid.map(x=>[pad + x.i*stepX, pad + (1-(x.v-min)/range)*(h-pad*2)]);
+  const coords = valid.map(x=>[pad + x.i*stepX, pad + (1-(x.v-vmin)/range)*(h-pad*2-10)]);
   const path = coords.map((c,i)=>(i===0?'M':'L')+c[0].toFixed(1)+','+c[1].toFixed(1)).join(' ');
-  const dots = coords.map(c=>`<circle cx="${c[0]}" cy="${c[1]}" r="3" fill="currentColor"/>`).join('');
-  return {path, dots, first:valid[0].v, last:valid[valid.length-1].v};
+  const dots = coords.map(c=>`<circle cx="${c[0]}" cy="${c[1]}" r="3" fill="${color}"/>`).join('');
+  const pointLabels = coords.map((c,i)=>{
+    const anchor = i===0 ? 'start' : (i===coords.length-1 ? 'end' : 'middle');
+    return `<text x="${c[0]}" y="${c[1]-7}" font-size="8" font-weight="700" fill="${color}" text-anchor="${anchor}">${fmtNum(valid[i].v)}</text>`;
+  }).join('');
+  return `<path d="${path}" fill="none" stroke="${color}" stroke-width="2"/>${dots}${pointLabels}`;
 }
 
 function renderWeightChart(pts){
@@ -1099,24 +1111,22 @@ function renderWeightChart(pts){
   const hasWeight = pts.filter(p=>p.weight!=null).length>=2;
   const hasMuscle = pts.filter(p=>p.muscleMass!=null).length>=2;
   if(!hasWeight && !hasMuscle){ box.innerHTML = '<div class="empty">至少需要 2 筆紀錄才有趨勢圖</div>'; return; }
-  const w=300,h=130,pad=26;
-  const allVals = pts.flatMap(p=>[p.weight,p.muscleMass]).filter(v=>v!=null);
-  const min=Math.min(...allVals), max=Math.max(...allVals);
-  const weightLine = hasWeight ? buildLine(pts,'weight',w,h,pad,min,max) : null;
-  const muscleLine = hasMuscle ? buildLine(pts,'muscleMass',w,h,pad,min,max) : null;
+  const w=300,h=150,pad=30;
   const firstDate = pts[0].date.slice(5), lastDate = pts[pts.length-1].date.slice(5);
+  // 體重跟肌肉量單位差太多，各自用自己的最高最低值畫線，不共用同一個Y軸座標，
+  // 不然肌肉量的變化會被體重的大範圍壓成一條幾乎看不出坡度的平線。
+  const weightSvg = hasWeight ? buildIndependentLine(pts,'weight',w,h,pad,'#e8590c') : '';
+  const muscleSvg = hasMuscle ? buildIndependentLine(pts,'muscleMass',w,h,pad,'#2f6f4e') : '';
   box.innerHTML = `
     <div class="chart-legend">
-      ${weightLine?'<span><i class="dotline" style="background:#e8590c"></i>體重</span>':''}
-      ${muscleLine?'<span><i class="dotline" style="background:#2f6f4e"></i>肌肉量</span>':''}
+      ${hasWeight?'<span><i class="dotline" style="background:#e8590c"></i>體重</span>':''}
+      ${hasMuscle?'<span><i class="dotline" style="background:#2f6f4e"></i>肌肉量</span>':''}
     </div>
     <svg viewBox="0 0 ${w} ${h}" style="width:100%;">
-      ${weightLine?`<g style="color:#e8590c"><path d="${weightLine.path}" fill="none" stroke="currentColor" stroke-width="2"/>${weightLine.dots}</g>`:''}
-      ${muscleLine?`<g style="color:#2f6f4e"><path d="${muscleLine.path}" fill="none" stroke="currentColor" stroke-width="2"/>${muscleLine.dots}</g>`:''}
+      ${weightSvg}
+      ${muscleSvg}
       <text x="${pad}" y="${h-6}" font-size="8" fill="#6b6b63">${firstDate}</text>
       <text x="${w-pad}" y="${h-6}" font-size="8" fill="#6b6b63" text-anchor="end">${lastDate}</text>
-      <text x="${pad}" y="14" font-size="10" font-weight="700" fill="#1a1a1a">${max.toFixed(1)}</text>
-      <text x="${pad}" y="${h-pad+10}" font-size="10" font-weight="700" fill="#1a1a1a">${min.toFixed(1)}</text>
     </svg>`;
 }
 
